@@ -8,6 +8,15 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(class)
+library(tree)
+library(randomForest)
+library(glmnet)
+library(ggmap)
 ```
 
+
+```{r}
+
+```
 
