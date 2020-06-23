@@ -15,8 +15,246 @@ library(glmnet)
 library(ggmap)
 ```
 
+```{r}
+bigBoston <- read.csv("C:/Users/Billy/Desktop/Boston_ML_CSVs/bigbostonml.csv")
+trainBoston <- read.csv("C:/Users/Billy/Desktop/Boston_ML_CSVs/training_boston.csv")
+testBoston <- read.csv("C:/Users/Billy/Desktop/Boston_ML_CSVs/validation_boston.csv")
+```
+
 
 ```{r}
+bostonArea <- rbind(trainBoston, testBoston)
 
+bostonArea$target_no <- as.factor(bostonArea$target_no)
+bostonArea$pricetype <- as.factor(bostonArea$pricetype)
+
+bostonArea$type <- tolower(bostonArea$type)
+bostonArea$pricetype <- tolower(bostonArea$pricetype)
+bostonArea$column <- tolower(bostonArea$column)
+bostonArea$area <- tolower(bostonArea$area)
+bostonArea$street <- tolower(bostonArea$street)
+bostonArea$crossstreet <- tolower(bostonArea$crossstreet)
+
+bostonArea$saleprice[is.na(bostonArea$saleprice)] <- 0
+bostonArea$rentprice[is.na(bostonArea$rentprice)] <- 0
+
+bostonArea$totalrooms <- as.integer(bostonArea$totalrooms)
+
+bostonArea <- bostonArea %>% filter(!is.na(target_no))
+
+bostonArea
 ```
+
+
+
+```{r}
+bostonPrediction <- bostonArea %>% dplyr::select(target_no, year, month, date, page, saleprice, pricetype, rentprice, frequency, column, area, hseno, street, crossstreet, totalrooms, type, distance_to_center, angle_from_center)
+bostonPrediction
+```
+
+
+
+```{r}
+bostonPrediction <- bostonPrediction %>% mutate_all(na_if,"")
+bostonPrediction
+str(bostonPrediction)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Model with removing missing values
+
+```{r}
+temp <- bostonPrediction %>% filter(saleprice != 0) %>% filter(!is.na(totalrooms)) %>% filter(type)
+temp
+bostonArea <- temp
+set.seed(343)
+train <- sample(nrow(bostonArea)*.8)
+bostonTrain <- bostonArea[train,]
+bostonTest <- bostonArea[-train,]
+
+length(unique(mod$target_no))
+length(unique(bostonTrain$target_no))
+length(unique(bostonTest$target_no))
+```
+
+```{r}
+bag <- randomForest(target_no ~ year + month + date + totalrooms + saleprice, data = bostonTrain, ntree = 500, mtry = 2, importance = TRUE)
+yhat.rf <- predict(bag, newdata = bostonTest)
+misclassRate <- mean(yhat.rf != bostonTest$target_no)
+misclassRate
+```
+
+
+```{r}
+options(max.print = 999999999)
+table(observed = bostonTest$target_no, predicted = yhat.rf)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Full Reset 
+
+```{r}
+bostonArea <- bigBoston
+
+bostonArea$target_no <- as.factor(bostonArea$target_no)
+
+
+bostonArea$type <- tolower(bostonArea$type)
+bostonArea$pricetype <- tolower(bostonArea$pricetype)
+bostonArea$column <- tolower(bostonArea$column)
+bostonArea$area <- tolower(bostonArea$area)
+bostonArea$street <- tolower(bostonArea$street)
+bostonArea$crossstreet <- tolower(bostonArea$crossstreet)
+bostonArea$frequency <- tolower(bostonArea$frequency)
+
+bostonArea$saleprice[is.na(bostonArea$saleprice)] <- 0
+bostonArea$rentprice[is.na(bostonArea$rentprice)] <- 0
+
+bostonArea$totalrooms <- as.integer(bostonArea$totalrooms)
+bostonArea$pricetype <- as.factor(bostonArea$pricetype)
+
+bostonArea <- bostonArea %>% filter(!is.na(target_no))
+
+bigBoston <- bostonArea
+```
+
+
+```{r}
+boston <- bigBoston %>% filter(area != "") %>% filter(area != ".") 
+boston$area <- tolower(boston$area)
+
+
+tbl25 <- boston %>% group_by(area) %>% summarise( count = n()) %>% arrange(desc(count))
+tbl25
+vector25 <- tbl25[1:25,]$area
+vector25
+
+
+bostonCustom <- boston %>% filter(area %in% vector25)
+bostonCustom
+```
+
+
+```{r}
+#setting area to a factor
+bostonCustom$area <- as.factor(bostonCustom$area)
+
+#Taking only the top results
+tbl20 <- bostonCustom %>% group_by(type) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(!type == "")
+tbl20
+vector <- tbl20[1:20,]$type
+vector
+bostonCustom <- bostonCustom %>% filter(type %in% vector)
+
+bostonCustom$type <- as.character(bostonCustom$type)
+bostonCustom$type <- as.factor(bostonCustom$type)
+
+
+#5 is the mean of totalrooms
+bostonCustom <- bostonCustom %>% mutate(totalrooms = replace_na(totalrooms,5))
+
+str(bostonCustom)
+dim(bostonCustom)
+```
+
+
+
+
+
+```{r}
+bostonArea <- bostonCustom 
+bostonArea
+```
+
+
+```{r}
+set.seed(30)
+
+shuffleRows <- sample(nrow(bostonArea))
+bostonArea <- bostonArea[shuffleRows,]
+train <- sample(nrow(bostonArea)*.80)
+bostonTrain <- bostonArea[train,]
+bostonTest <- bostonArea[-train,]
+
+length(unique(bostonArea$area))
+length(unique(bostonTrain$area))
+length(unique(bostonTest$area))
+```
+
+```{r}
+bag <- randomForest(area ~ year + totalrooms + type + saleprice + rentprice + pricetype, data = bostonTrain, ntree = 500, mtry = 2, importance = TRUE)
+yhat.rf <- predict(bag, newdata = bostonTest)
+misclassRate <- mean(yhat.rf != bostonTest$area)
+misclassRate
+```
+
+```{r}
+options(max.print = 999999999)
+table(observed = bostonTest$area, predicted = yhat.rf)
+```
+
+
+
+
+```{r}
+all <- c(1:6)
+for(i in 1:6){
+tempForest <- randomForest(area ~ year + totalrooms + type + saleprice + rentprice + pricetype, data = bostonTrain, ntree = 500, mtry = i, importance = TRUE)
+yhat.rf <- predict(tempForest, newdata = bostonTest)
+all[i] <- mean(yhat.rf != bostonTest$area)
+}
+
+which.min(all)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

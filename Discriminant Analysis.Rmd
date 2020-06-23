@@ -1,0 +1,77 @@
+---
+title: "QDA, LDA"
+author: "Bill Lang"
+date: "6/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(class)
+library(tree)
+library(randomForest)
+library(glmnet)
+library(ggmap)
+library(MASS)
+```
+
+```{r}
+bostonArea <- bostonCustom
+bostonArea
+```
+
+LDA
+
+```{r}
+set.seed(343)
+
+shuffleRows <- sample(nrow(bostonArea))
+bostonArea <- bostonArea[shuffleRows,]
+train <- sample(nrow(bostonArea)*.80)
+bostonTrain <- bostonArea[train,]
+bostonTest <- bostonArea[-train,]
+
+length(unique(bostonArea$area))
+length(unique(bostonTrain$area))
+length(unique(bostonTest$area))
+```
+
+
+```{r}
+lda.fit <- lda(area ~year+ totalrooms + saleprice + rentprice + pricetype + type, data = bostonTrain)
+lda.fit
+```
+
+```{r}
+lda.pred <- predict(lda.fit, bostonTest)
+
+lda.class <- lda.pred$class
+options(max.print = 999999999)
+table(observed = bostonTest$area,predicted = lda.class)
+```
+
+
+```{r}
+misclassRate <- mean(lda.class != bostonTest$area)
+misclassRate
+```
+
+
+```{r}
+options(max.print = 999999999)
+table(observed = bostonTest$target_no, predicted = yhat.rf)
+```
+
+
+QDA
+
+
+```{r}
+qda.fit <- MASS::qda(area ~year+ totalrooms + saleprice + rentprice + pricetype + type, data = bostonTrain)
+qda.fit
+```
+
+
+
+
