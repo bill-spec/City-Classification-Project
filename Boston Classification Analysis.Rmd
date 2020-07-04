@@ -19,10 +19,8 @@ This first half will construct a random forest model on the 15,713 observations 
 Reading in file.
 
 ```{r}
-boston <- read.csv("C:/Users/Billy/Desktop/hipHop/hiphop_boston.csv")
-boston
-saveRDS(boston, file = "boston.RData")
-boston <- readRDS("boston.RData")
+#save(boston, file = "boston.RData")
+load(file = "boston.RData")
 boston
 ```
 
@@ -39,6 +37,7 @@ boston$Area <- tolower(boston$Area)
 tbl <- boston %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
 listOfAreas <- tbl[1:50,]$Area
 listOfAreas
+save(listOfAreas, file = "Areas.RData")
 ```
 
 Finding the observations with a top 50 observation. 
@@ -46,7 +45,7 @@ Finding the observations with a top 50 observation.
 ```{r}
 boston <- boston %>% filter(Area %in% listOfAreas) 
 bostonAddress <- boston %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
-bostonAddress$Address <- paste(bostonAddress$Address, " , MA")
+bostonAddress$Address <- paste(bostonAddress$Address, ", MA")
 bostonAddress
 ```
 
@@ -57,46 +56,45 @@ bostonAddress <- bostonAddress %>% filter((Street != "") | (Cross.Street != ""))
 bostonAddress
 ```
 
-Geocoding those addresses and saving them to a file on my desktop (to circumvent geocoding again)
+Geocoding those addresses and saving them to a file in the project (to circumvent geocoding again)
  
 ```{r}
 geocodeFileFull <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeFile <- geocodeFileFull
+firstGeocodeFile <- geocodeFileFull
 #write.csv(geocodeFile, file = "C:/Users/Billy/Desktop/Storage/OSMgeocodedCSV.csv", row.names = FALSE)
 #geocodeFile <- read.csv("C:/Users/Billy/Desktop/Storage/OSMgeocodedCSV.csv")
-save(geocodeFile, file = "first.RData")
+save(firstGeocodeFile, file = "first.RData")
+load(file = "first.RData")
+firstGeocodeFile
 ```
 
 Filtering outliers in the geocoding process. These results were so far outside of Boston they are being treated as failed geocoding results.
 
 ```{r}
-geocodeFile
-geocodeFile <- geocodeFile %>% filter(!is.na(latitude))
-geocodeFile$Area <- as.factor(geocodeFile$Area)
-geocodeFile <- geocodeFile %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
-geocodeFile
+firstGeocodeFile
+firstGeocodeFile <- firstGeocodeFile %>% filter(!is.na(latitude))
+firstGeocodeFile$Area <- as.factor(firstGeocodeFile$Area)
+firstGeocodeFile <- firstGeocodeFile %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
+firstGeocodeFile
 ```
 
 Preparing the dataset for a model. Shfiting all character variables to lowercase and set to factors. The average total number of rooms is 5 and is used to replace any NAs in that column.  
 
 ```{r}
-bostonArea <- geocodeFile
 
-bostonArea$Price.type <- tolower(bostonArea$Price.type)
-bostonArea$Price.type <- as.factor(bostonArea$Price.type)
+firstGeocodeFile$Price.type <- tolower(firstGeocodeFile$Price.type)
+firstGeocodeFile$Price.type <- as.factor(firstGeocodeFile$Price.type)
 
-bostonArea$Type <- tolower(bostonArea$Type)
+firstGeocodeFile$Type <- tolower(firstGeocodeFile$Type)
 
-bostonArea$Column <- tolower(bostonArea$Column)
-bostonArea$Type <- as.factor(bostonArea$Type)
-bostonArea$Total.rooms <- as.integer(bostonArea$Total.rooms)
-
-geocodeFile <- bostonArea
+firstGeocodeFile$Column <- tolower(firstGeocodeFile$Column)
+firstGeocodeFile$Type <- as.factor(firstGeocodeFile$Type)
+firstGeocodeFile$Total.rooms <- as.integer(firstGeocodeFile$Total.rooms)
 
 #5 is the mean of totalrooms
-geocodeFile <- geocodeFile %>% mutate(Total.rooms = replace_na(Total.rooms,5))
-geocodeFile
-str(geocodeFile)
+firstGeocodeFile <- firstGeocodeFile %>% mutate(Total.rooms = replace_na(Total.rooms,5))
+firstGeocodeFile
+str(firstGeocodeFile)
 ```
 
 Model Building
@@ -104,16 +102,16 @@ Model Building
 This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. A large confusion matrix is generated alongside the actual different statistics. 
  
 ```{r}
-bostonArea <- geocodeFile 
+modelData <- firstGeocodeFile 
 set.seed(343)
 
-shuf <- sample(nrow(bostonArea))
-bostonArea <- bostonArea[shuf,]
-train <- sample(nrow(bostonArea)*.8)
-bostonTrain <- bostonArea[train,]
-bostonTest <- bostonArea[-train,]
+shuf <- sample(nrow(modelData))
+modelData <- modelData[shuf,]
+train <- sample(nrow(modelData)*.8)
+bostonTrain <- modelData[train,]
+bostonTest <- modelData[-train,]
 
-length(unique(bostonArea$Area))
+length(unique(modelData$Area))
 length(unique(bostonTrain$Area))
 length(unique(bostonTest$Area))
 ```
@@ -176,7 +174,7 @@ Full Model
 Using all the available data we can construct a full model to use for the rest of the analysis.
 
 ```{r}
-fullModel <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.type, data = geocodeFile, ntree = 1000, mtry = 2, importance = TRUE)
+fullModel <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.type, data = firstGeocodeFile, ntree = 1000, mtry = 2, importance = TRUE)
 ```
 
 
@@ -187,7 +185,7 @@ The next goal is to investigate how well this model works on the 8871 observatio
 First we can re-clean the data from earlier to get the 8,871.
 
 ```{r}
-boston <- read.csv("C:/Users/Billy/Desktop/hipHop/hiphop_boston.csv")
+load("boston.RData")
 boston
 ```
 
@@ -204,17 +202,23 @@ bostonAddress
 ```
 
 ```{r}
-boston <- boston %>% filter(Area != "") %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No == "")
-boston
+bostonAddress <- bostonAddress %>% filter(Area != "") %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No == "")
+bostonAddress
+
+setdiff(unique(boston$Area), unique(firstGeocodeFile$Area))
 ```
 
 Geocoding and saving the files same as before. 
  
 ```{r}
-geocodeFileFull <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeFileNoHse <- geocodeFileFull
-write.csv(geocodeFileNoHse, file = "C:/Users/Billy/Desktop/Storage/OSMgeocodedNoHSECSV.csv", row.names = FALSE)
-geocodeFileNoHse <- read.csv("C:/Users/Billy/Desktop/Storage/OSMgeocodedNoHSECSV.csv") 
+geocodeFileFullno <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodeFileNoHse <- geocodeFileFullno
+#write.csv(geocodeFileNoHse, file = "C:/Users/Billy/Desktop/Storage/OSMgeocodedNoHSECSV.csv", row.names = FALSE)
+#geocodeFileNoHse <- read.csv("C:/Users/Billy/Desktop/Storage/OSMgeocodedNoHSECSV.csv") 
+
+save(geocodeFileNoHse, file = "second.RData")
+load(file = "second.RData")
+geocodeFileNoHse
 ```
 
 ```{r}
@@ -253,11 +257,6 @@ yhat.rf <- predict(fullModel, newdata = geocodeFileNoHse)
 predicted <- cbind(yhat.rf, geocodeFileNoHse)
 predicted
 
-setdiff(a,b)
-a;b
-a <- unique(geocodeFile$Area)
-b <- unique(geocodeFileNoHse$Area) 
-
 misclassNoHse <- mean(yhat.rf != geocodeFileNoHse$Area)
 misclassNoHse
 ```
@@ -278,7 +277,7 @@ ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latit
 Next we can take the 37,506 observations that aren't inside the top 50 regions, and predict the most likely region to classify them in.
 
 ```{r}
-boston <- read.csv("C:/Users/Billy/Desktop/hipHop/hiphop_boston.csv")
+load("boston.RData")
 boston
 ```
 
@@ -293,10 +292,10 @@ bostonAddress
 Geocoding and saving the files same as before. 
  
 ```{r}
-geocodeFileFull <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeFileNoHse <- geocodeFileFull
-write.csv(geocodeFileNoHse, file = "C:/Users/Billy/Desktop/Storage/OSMgeocodedNoAREA.csv", row.names = FALSE)
-geocodeFileNoHse <- read.csv("C:/Users/Billy/Desktop/Storage/OSMgeocodedNoAREA.csv") 
+geocodeFileClassify <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodeFileClassify
+save(geocodeFileClassify, file = "third.RData")
+load(file = "third.RData")
 ```
 
 ```{r}
