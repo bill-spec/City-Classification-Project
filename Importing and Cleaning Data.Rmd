@@ -23,6 +23,12 @@ testBoston <- read.csv("C:/Users/Billy/Desktop/Boston_ML_CSVs/validation_boston.
 
 
 ```{r}
+bigBoston
+bigBoston %>% filter(is.na(target_no)) %>% filter((street != "") | (crossstreet != ""))
+```
+
+
+```{r}
 bostonArea <- rbind(trainBoston, testBoston)
 
 bostonArea$target_no <- as.factor(bostonArea$target_no)
