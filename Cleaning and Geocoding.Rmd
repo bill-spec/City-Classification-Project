@@ -45,14 +45,12 @@ Find the observations with a top 50 area.
 boston <- boston %>% filter(Area %in% listOfAreas) 
 bostonAddress <- boston %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
 bostonAddress$Address <- paste(bostonAddress$Address, ", MA")
-bostonAddress
 ```
 
 Finding the 15,713 observations with full addresses.
 
 ```{r}
 bostonAddress <- bostonAddress %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No != "")
-bostonAddress
 ```
 
 Geocoding those addresses and saving them to a file in the project (to circumvent geocoding again)
@@ -63,6 +61,7 @@ Geocoding those addresses and saving them to a file in the project (to circumven
 #firstGeocodeFile <- geocodeFileFull
 ```
 
+Saving and loading the geocoding data for easy recreation. 
 
 ```{r}
 save(firstGeocodeFile, file = "first.RData")
@@ -70,19 +69,18 @@ load(file = "first.RData")
 firstGeocodeFile
 ```
 
-Filtering outliers in the geocoding process. These results were so far outside of Boston they are being treated as failed geocoding results.
+Filtering outliers in the geocoding process. These results were so far outside of Boston they are being treated as failed geocoding result and not considered.
 
 ```{r}
-firstGeocodeFile
+
 firstGeocodeFile$Area <- as.factor(firstGeocodeFile$Area)
 
 firstGeocodeFile <- firstGeocodeFile %>% filter(!is.na(latitude))
 firstGeocodeFile <- firstGeocodeFile %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
 
-firstGeocodeFile
 ```
 
-Preparing the dataset for a model. Shfiting all character variables to lowercase and set to factors. The average total number of rooms is 5 and is used to replace any NAs in that column.  
+Preparing the dataset for a model. Shfiting all character variables to lowercase and set to factors. The average total number of rooms is 5 and is used to replace the few NAs in that column without losing much information.  
 
 ```{r}
 firstGeocodeFile$Price.type <- tolower(firstGeocodeFile$Price.type)
@@ -96,70 +94,25 @@ firstGeocodeFile$Total.rooms <- as.integer(firstGeocodeFile$Total.rooms)
 
 #5 is the mean of totalrooms
 firstGeocodeFile <- firstGeocodeFile %>% mutate(Total.rooms = replace_na(Total.rooms,5))
-firstGeocodeFile
-str(firstGeocodeFile)
 ```
 
-Model Building
-
-This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. A large confusion matrix is generated alongside the actual different statistics. 
- 
-```{r}
-modelData <- firstGeocodeFile 
-set.seed(343)
-
-shuf <- sample(nrow(modelData))
-modelData <- modelData[shuf,]
-train <- sample(nrow(modelData)*.8)
-bostonTrain <- modelData[train,]
-bostonTest <- modelData[-train,]
-
-length(unique(modelData$Area))
-length(unique(bostonTrain$Area))
-length(unique(bostonTest$Area))
-```
+Saving this dataset as ```trainingData.RData```, its then reloaded in the ```Random Forest Scripts``` file.
 
 
 ```{r}
-bag <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.type, data = bostonTrain, ntree = 1000, mtry = 2, importance = TRUE)
-yhat.rf <- predict(bag, newdata = bostonTest)
-misclassRate <- mean(yhat.rf != bostonTest$Area)
-misclassRate
-
-predicted <- cbind(yhat.rf, bostonTest)
-predicted
-```
-
-We can then map the results using the ggmaps package below to manuely search for any errors.
-
-```{r}
-k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
-register_google(key = k)
-```
-
-```{r}
-map <- get_map(location = 'Boston', zoom = 9, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
-```
-
-
-Full Model
-Using all the available data we can construct a full model to use for the rest of the analysis.
-
-```{r}
-fullModel <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.type, data = firstGeocodeFile, ntree = 1000, mtry = 2, importance = TRUE)
+trainingData <- firstGeocodeFile
+save(trainingData, file = "trainingData.RData")
 ```
 
 
 
-The next goal is to investigate how well this model works on the 8871 observations that don't have a house number. This will depend on the quality of the geocoding and how well the model does. 
 
+The next lines of code investigate how well this model performs on the 8871 observations that don't have a house number. 
 
-First we can re-clean the data from earlier to get the 8,871.
+First we can re-clean the data from earlier to get the 8,871 observations without a good house number.
 
 ```{r}
 load("boston.RData")
-boston
 ```
 
 ```{r}
@@ -171,34 +124,32 @@ boston$Area <- tolower(boston$Area)
 boston <- boston %>% filter(Area %in% listOfAreas)
 bostonAddress <- boston %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
 bostonAddress$Address <- paste(bostonAddress$Address, " , MA")
-bostonAddress
+
 ```
 
 ```{r}
 bostonAddress <- bostonAddress %>% filter(Area != "") %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No == "")
-bostonAddress
-
-setdiff(unique(boston$Area), unique(firstGeocodeFile$Area))
 ```
 
 Geocoding and saving the files same as before. 
  
 ```{r}
-geocodeFileFullno <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeFileNoHse <- geocodeFileFullno
-#write.csv(geocodeFileNoHse, file = "C:/Users/Billy/Desktop/Storage/OSMgeocodedNoHSECSV.csv", row.names = FALSE)
-#geocodeFileNoHse <- read.csv("C:/Users/Billy/Desktop/Storage/OSMgeocodedNoHSECSV.csv") 
+#geocodeFileFullno <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
+#geocodeFileNoHse <- geocodeFileFullno
 
 save(geocodeFileNoHse, file = "second.RData")
 load(file = "second.RData")
 geocodeFileNoHse
 ```
 
+Cleaning the data same as before.
+
 ```{r}
 geocodeFileNoHse <- geocodeFileNoHse %>% filter(!is.na(latitude))
 geocodeFileNoHse$Area <- as.factor(geocodeFileNoHse$Area)
+
 geocodeFileNoHse <- geocodeFileNoHse %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
-geocodeFileNoHse
+
 ```
 
 ```{r}
@@ -209,46 +160,37 @@ bostonArea$Price.type <- tolower(bostonArea$Price.type)
 bostonArea$Price.type <- as.factor(bostonArea$Price.type)
 
 bostonArea$Type <- tolower(bostonArea$Type)
+bostonArea$Type <- as.factor(bostonArea$Type)
+
 
 bostonArea$Column <- tolower(bostonArea$Column)
-bostonArea$Type <- as.factor(bostonArea$Type)
 bostonArea$Total.rooms <- as.integer(bostonArea$Total.rooms)
 
 geocodeFileNoHse <- bostonArea
 
 #5 is the mean of totalrooms
 geocodeFileNoHse <- geocodeFileNoHse %>% mutate(Total.rooms = replace_na(Total.rooms,5))
-geocodeFileNoHse
-str(geocodeFileNoHse)
 ```
 
-Predict the data from the previous model and get a misclass rate. 
+Again, this file is saved and reloaded in the ```Random Forest Scripts``` page.
 
 ```{r}
-
-yhat.rf <- predict(fullModel, newdata = geocodeFileNoHse)
-predicted <- cbind(yhat.rf, geocodeFileNoHse)
-predicted
-
-misclassNoHse <- mean(yhat.rf != geocodeFileNoHse$Area)
-misclassNoHse
-```
-
-
-
-```{r}
-map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)
+save(geocodeFileNoHse, file = "geocodeFileNoHse.RData")
 ```
 
 
 
 
-Next we can take the 37,506 observations that aren't inside the top 50 regions, and predict the most likely region to classify them in.
+
+
+
+
+
+
+Next we can take the 37,506 observations that aren't inside the top 50 regions, predict the most likely region to classify them in, and investigate if the results seem correct.
 
 ```{r}
 load("boston.RData")
-boston
 ```
 
 ```{r}
@@ -256,7 +198,7 @@ boston$Area <- tolower(boston$Area)
 boston <- boston %>% filter(!(Area %in% listOfAreas))
 bostonAddress <- boston %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
 bostonAddress$Address <- paste(bostonAddress$Address, " , MA")
-bostonAddress
+
 ```
 
 Geocoding and saving the files same as before. 
@@ -274,10 +216,6 @@ geocodeFileClassify
 ```{r}
 geocodeFileClassify <- geocodeFileClassify %>% filter(!is.na(latitude))
 geocodeFileClassify$Area <- as.factor(geocodeFileClassify$Area)
-
-geocodeFileClassify <- geocodeFileClassify %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
-
-geocodeFileClassify
 ```
 
 ```{r}
@@ -295,24 +233,17 @@ geocodeFileClassify <- geocodeFileClassify
 
 #5 is the mean of totalrooms
 geocodeFileClassify <- geocodeFileClassify %>% mutate(Total.rooms = replace_na(Total.rooms,5))
-geocodeFileClassify
-str(geocodeFileClassify)
-```
 
-Predict the data from the previous model and map the results for validation.
+
+
+```
 
 ```{r}
-fullModel
-yhat.rf <- predict(fullModel, newdata = geocodeFileClassify)
-predicted <- cbind(yhat.rf, geocodeFileClassify)
-predicted
+missingArea<- geocodeFileClassify
+save(missingArea, file = "missingArea.RData")
 ```
 
 
-```{r}
-map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)
-```
 
 
 
