@@ -11,6 +11,8 @@ library(tidyverse)
 library(ggmap)
 ```
 
+
+
 ```{r}
 load(file = "boston.RData")
 boston
@@ -28,8 +30,11 @@ boston
 Geocoding and saving the files same as before. 
  
 ```{r}
-geocoded <- tidygeocoder::geocode(.tbl = boston, address = Address, method = "osm", lat = latitude, long = longitude)
-save(geocoded, file = "allBoston.RData")
+#geocoded <- tidygeocoder::geocode(.tbl = boston, address = Address, method = "osm", lat = latitude, long = longitude)
+```
+
+
+```{r}
 load(file = "allBoston.RData")
 geocoded 
 ```
@@ -61,7 +66,7 @@ register_google(key = k)
 
 
 ```{r}
-map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = geocoded, mapping = aes(x = longitude, y = latitude, color = factor(Price.type)), size = 1)
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = geocoded, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
 ```
 

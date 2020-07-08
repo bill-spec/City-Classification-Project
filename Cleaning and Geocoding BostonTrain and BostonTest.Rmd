@@ -1,0 +1,30 @@
+---
+title: "Cleaning and Geocoding BostonTrain and BostonTest"
+author: "Bill Lang"
+date: "7/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggmap)
+```
+
+```{r}
+bostonTargets <- read.csv("C:/Users/the36/Downloads/boston_targets.csv")
+bostonValidation <- read.csv("C:/Users/the36/Downloads/validation_boston.csv")
+bostonTraining <- read.csv("C:/Users/the36/Downloads/training_boston.csv")
+```
+
+```{r}
+save(bostonTargets,bostonValidation,bostonTraining, file = "mikesData.RData")
+load(file = "mikesData.RData")
+head(bostonTargets); head(bostonValidation); head(bostonTraining)
+```
+
+
+```{r}
+setdiff(tolower(bostonTargets$target_areas),listOfAreas)
+```
+

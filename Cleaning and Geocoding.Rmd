@@ -1,16 +1,15 @@
 ---
-title: "Boston Classification"
+title: "Cleaning and Geocoding"
 author: "Bill Lang"
-date: "7/1/2020"
+date: "7/7/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(tidygeocoder)
-library(randomForest)
 library(ggmap)
+library(tidygeocoder)
 ```
 
 
@@ -40,7 +39,7 @@ listOfAreas
 save(listOfAreas, file = "Areas.RData")
 ```
 
-Finding the observations with a top 50 observation. 
+Find the observations with a top 50 area. 
 
 ```{r}
 boston <- boston %>% filter(Area %in% listOfAreas) 
@@ -59,10 +58,13 @@ bostonAddress
 Geocoding those addresses and saving them to a file in the project (to circumvent geocoding again)
  
 ```{r}
-geocodeFileFull <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
-firstGeocodeFile <- geocodeFileFull
-#write.csv(geocodeFile, file = "C:/Users/Billy/Desktop/Storage/OSMgeocodedCSV.csv", row.names = FALSE)
-#geocodeFile <- read.csv("C:/Users/Billy/Desktop/Storage/OSMgeocodedCSV.csv")
+#This takes hours and doesn't need run again
+#geocodeFileFull <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
+#firstGeocodeFile <- geocodeFileFull
+```
+
+
+```{r}
 save(firstGeocodeFile, file = "first.RData")
 load(file = "first.RData")
 firstGeocodeFile
@@ -72,23 +74,24 @@ Filtering outliers in the geocoding process. These results were so far outside o
 
 ```{r}
 firstGeocodeFile
-firstGeocodeFile <- firstGeocodeFile %>% filter(!is.na(latitude))
 firstGeocodeFile$Area <- as.factor(firstGeocodeFile$Area)
+
+firstGeocodeFile <- firstGeocodeFile %>% filter(!is.na(latitude))
 firstGeocodeFile <- firstGeocodeFile %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
+
 firstGeocodeFile
 ```
 
 Preparing the dataset for a model. Shfiting all character variables to lowercase and set to factors. The average total number of rooms is 5 and is used to replace any NAs in that column.  
 
 ```{r}
-
 firstGeocodeFile$Price.type <- tolower(firstGeocodeFile$Price.type)
 firstGeocodeFile$Price.type <- as.factor(firstGeocodeFile$Price.type)
 
 firstGeocodeFile$Type <- tolower(firstGeocodeFile$Type)
+firstGeocodeFile$Type <- as.factor(firstGeocodeFile$Type)
 
 firstGeocodeFile$Column <- tolower(firstGeocodeFile$Column)
-firstGeocodeFile$Type <- as.factor(firstGeocodeFile$Type)
 firstGeocodeFile$Total.rooms <- as.integer(firstGeocodeFile$Total.rooms)
 
 #5 is the mean of totalrooms
@@ -122,38 +125,9 @@ bag <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.typ
 yhat.rf <- predict(bag, newdata = bostonTest)
 misclassRate <- mean(yhat.rf != bostonTest$Area)
 misclassRate
+
 predicted <- cbind(yhat.rf, bostonTest)
 predicted
-```
-
-Confusion Matrix
-
-```{r}
-
-```
-
-
-
-Cross Validation 
-
-To get a better estimate of the test error rate the model is cross validated below. 
-
-```{r}
-shuf <- sample(nrow(bostonArea))
-bostonArea <- bostonArea[shuf,]
-ind1 <- c(1, 1311, 2621, 3931, 5241, 6551, 7861, 9171, 10481, 11791)
-ind2 <- c(1310, 2620, 3930, 5240, 6550, 7860, 9170, 10480, 11790, 13100)
-rates <- c(1:10)
-for(i in 1:10){
-	tempTrain <- bostonArea[-(ind1[i]:ind2[i]),]
-	tempTest <- bostonArea[ind1[i]:ind2[i],]
-
-  bag <- randomForest(Area ~ latitude + longitude + Year + Total.rooms, data = tempTrain, ntree = 1000, mtry = 2, importance = TRUE)
-  yhat.rf <- predict(bag, newdata = tempTest)
-  rates[i] <- mean(yhat.rf != tempTest$Area)
-}
-mean(rates)
-rates
 ```
 
 We can then map the results using the ggmaps package below to manuely search for any errors.
@@ -163,10 +137,9 @@ k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
 register_google(key = k)
 ```
 
-
 ```{r}
-map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)
+map <- get_map(location = 'Boston', zoom = 9, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
 ```
 
 
@@ -269,9 +242,6 @@ ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latit
 ```
 
 
-```{r}
-
-```
 
 
 Next we can take the 37,506 observations that aren't inside the top 50 regions, and predict the most likely region to classify them in.
@@ -292,9 +262,11 @@ bostonAddress
 Geocoding and saving the files same as before. 
  
 ```{r}
-geocodeFileClassify <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeFileClassify
-save(geocodeFileClassify, file = "third.RData")
+#geocodeFileClassify <- tidygeocoder::geocode(.tbl = bostonAddress, address = Address, method = "osm", lat = latitude, long = longitude)
+```
+
+
+```{r}
 load(file = "third.RData")
 geocodeFileClassify
 ```
@@ -302,12 +274,13 @@ geocodeFileClassify
 ```{r}
 geocodeFileClassify <- geocodeFileClassify %>% filter(!is.na(latitude))
 geocodeFileClassify$Area <- as.factor(geocodeFileClassify$Area)
+
 geocodeFileClassify <- geocodeFileClassify %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
+
 geocodeFileClassify
 ```
 
 ```{r}
-
 geocodeFileClassify$Price.type <- tolower(geocodeFileClassify$Price.type)
 geocodeFileClassify <- geocodeFileClassify %>% filter(Price.type != "income")
 geocodeFileClassify$Price.type <- as.factor(geocodeFileClassify$Price.type)
@@ -329,9 +302,6 @@ str(geocodeFileClassify)
 Predict the data from the previous model and map the results for validation.
 
 ```{r}
-
-str(geocodeFileClassify)
-
 fullModel
 yhat.rf <- predict(fullModel, newdata = geocodeFileClassify)
 predicted <- cbind(yhat.rf, geocodeFileClassify)
