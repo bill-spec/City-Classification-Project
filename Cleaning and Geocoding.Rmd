@@ -98,7 +98,6 @@ firstGeocodeFile <- firstGeocodeFile %>% mutate(Total.rooms = replace_na(Total.r
 
 Saving this dataset as ```trainingData.RData```, its then reloaded in the ```Random Forest Scripts``` file.
 
-
 ```{r}
 trainingData <- firstGeocodeFile
 save(trainingData, file = "trainingData.RData")
