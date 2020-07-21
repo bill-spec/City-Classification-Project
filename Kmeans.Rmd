@@ -12,46 +12,24 @@ library(ggmap)
 ```
 
 ```{r}
-load(file = "boston.RData")
-boston
-```
-
-
-```{r}
-boston$Area <- tolower(boston$Area)
-boston$Street <- tolower(boston$Street)
-boston <- boston %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
-boston$Address <- paste(boston$Address, ", MA")
-boston
-```
-
-Geocoding and saving the files same as before. 
- 
-```{r}
-geocoded <- tidygeocoder::geocode(.tbl = boston, address = Address, method = "osm", lat = latitude, long = longitude)
-save(geocoded, file = "allBoston.RData")
-load(file = "allBoston.RData")
-geocoded 
+load(file = "cleanBoston.RData")
+bostonData
 ```
 
 ```{r}
-geocoded <- geocoded %>% select(Year,Month,Date,Price.type,Total.rooms,Column,Area,Hse.No,Street,Cross.Street,Address,Type,latitude,longitude)
+x <- bostonData %>% mutate(num = ifelse(Price.type == "sale", 1,0)) %>% select(latitude, longitude, num, Total.rooms)  
+x <- na.omit(x)
+mod <- kmeans(x,50)
 
-geocoded$Price.type <- tolower(geocoded$Price.type)
-geocoded$Price.type <- as.factor(geocoded$Price.type)
-
-geocoded$Type <- tolower(geocoded$Type)
-
-geocoded$Column <- tolower(geocoded$Column)
-geocoded$Type <- as.factor(geocoded$Type)
-geocoded$Total.rooms <- as.integer(geocoded$Total.rooms)
-geocoded <- geocoded
-
-#5 is the mean of totalrooms
-geocoded <- geocoded %>% mutate(Total.rooms = replace_na(Total.rooms,5))
-geocoded
-str(geocoded)
+z <- as.data.frame(x = mod$cluster)  
+names(z)[1] <- c("class")
+z$class <- as.factor(z$class)
+z
+y <- cbind(x,z)
+y
 ```
+
+
 
 
 ```{r}
@@ -61,7 +39,23 @@ register_google(key = k)
 
 
 ```{r}
-map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = geocoded, mapping = aes(x = longitude, y = latitude, color = factor(Price.type)), size = 1)
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = y, mapping = aes(x = longitude, y = latitude,color = factor(class)), size = 1)
+```
+
+```{r}
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+m <- ggmap(map)
+```
+
+
+```{r}
+m + geom_polygon(data = modelData, mapping = aes(x = longitude, y = latitude, fill = capitalizedPrice, group = Area), color = "red", alpha= 0.5)
+
+a <- bostonData %>% filter(capitalizedPrice < 1000000)
+m + geom_point(data = a, mapping = aes(x = longitude, y = latitude, color = capitalizedPrice)) + scale_colour_gradient(low = "white", high = "blue")
+
+m + geom_density_2d(data = bostonData, mapping = aes(x = longitude, y = latitude, alpha = capitalizedPrice))
+?ggmap
 ```
 
