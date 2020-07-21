@@ -50,12 +50,12 @@ m <- ggmap(map)
 
 
 ```{r}
-m + geom_polygon(data = modelData, mapping = aes(x = longitude, y = latitude, fill = capitalizedPrice, group = Area), color = "red", alpha= 0.5)
+#m + geom_polygon(data = modelData, mapping = aes(x = longitude, y = latitude, fill = capitalizedPrice, group = Area), color = "red", alpha= 0.5)
 
-a <- bostonData %>% filter(capitalizedPrice < 1000000)
+a <- bostonData %>% filter(capitalizedPrice < 250000)
 m + geom_point(data = a, mapping = aes(x = longitude, y = latitude, color = capitalizedPrice)) + scale_colour_gradient(low = "white", high = "blue")
 
-m + geom_density_2d(data = bostonData, mapping = aes(x = longitude, y = latitude, alpha = capitalizedPrice))
+#m + geom_density_2d(data = bostonData, mapping = aes(x = longitude, y = latitude, alpha = capitalizedPrice))
 ?ggmap
 ```
 
