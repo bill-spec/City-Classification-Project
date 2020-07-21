@@ -1,0 +1,47 @@
+---
+title: "Cleaning"
+author: "Bill Lang"
+date: "6/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggmap)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+library(xml2)
+```
+
+
+```{r}
+boston <- read.csv("C:/Users/Billy/Desktop/hipHop/hiphop_boston.csv")
+```
+
+
+```{r}
+bostonSimp <- boston %>% select(Year,Column,Area,Hse.No,Street) %>% filter(Area != "")
+bostonSimp 
+```
+
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r}
+testFile <- bostonSimp[1:1000,3]
+testFile
+testCoordinates <- geocode(testFile)
+testCoordinates
+
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(mapping = aes(x = lon, y = lat), data = testCoordinates)
+```
+
+
+
+

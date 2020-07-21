@@ -17,7 +17,7 @@ library(MASS)
 ```
 
 ```{r}
-bostonArea <- bostonCustom
+bostonArea <- geocodeFile %>% filter(!is.na(latitude))
 bostonArea
 ```
 
@@ -32,14 +32,14 @@ train <- sample(nrow(bostonArea)*.80)
 bostonTrain <- bostonArea[train,]
 bostonTest <- bostonArea[-train,]
 
-length(unique(bostonArea$area))
-length(unique(bostonTrain$area))
-length(unique(bostonTest$area))
+length(unique(bostonArea$Area))
+length(unique(bostonTrain$Area))
+length(unique(bostonTest$Area))
 ```
 
 
 ```{r}
-lda.fit <- lda(area ~year+ totalrooms + saleprice + rentprice + pricetype + type, data = bostonTrain)
+lda.fit <- lda(Area ~year+ totalrooms + type + latitude + longitude, data = bostonTrain)
 lda.fit
 ```
 
@@ -48,12 +48,12 @@ lda.pred <- predict(lda.fit, bostonTest)
 
 lda.class <- lda.pred$class
 options(max.print = 999999999)
-table(observed = bostonTest$area,predicted = lda.class)
+table(observed = bostonTest$Area,predicted = lda.class)
 ```
 
 
 ```{r}
-misclassRate <- mean(lda.class != bostonTest$area)
+misclassRate <- mean(lda.class != bostonTest$Area)
 misclassRate
 ```
 
@@ -71,6 +71,7 @@ QDA
 qda.fit <- MASS::qda(area ~year+ totalrooms + saleprice + rentprice + pricetype + type, data = bostonTrain)
 qda.fit
 ```
+
 
 
 

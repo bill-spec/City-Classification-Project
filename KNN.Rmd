@@ -16,8 +16,8 @@ library(ggmap)
 ```
 
 ```{r}
-bostonArea <- bostonCustom
-bostonArea <- bostonArea %>% select(area, year, month, date, totalrooms, saleprice, rentprice)
+bostonArea <- geocodeFile %>% filter(!is.na(latitude))
+bostonArea <- bostonArea %>% dplyr::select(Area, totalrooms, longitude, latitude)
 bostonArea
 ```
 
@@ -34,9 +34,9 @@ bostonTrain <- bostonArea[train,]
 bostonTest <- bostonArea[-train,] 
 
 bostonTrain.x <- bostonTrain[,-1]
-bostonTrain.y <- bostonTrain[,-c(2:7)]
+bostonTrain.y <- bostonTrain[,-c(2:4)]
 bostonTest.x <- bostonTest[,-1]
-bostonTest.y <- bostonTest[,-c(2:7)]
+bostonTest.y <- bostonTest[,-c(2:4)]
 ```
 
 
@@ -46,8 +46,10 @@ length(bostonTrain.y)
 
 dim(bostonTest.x)
 length(bostonTest.y)
+```
 
 
+```{r}
 bostonTrain.x 
 bostonTrain.y
 
@@ -63,7 +65,7 @@ all[i] <- mean(knn.pred != bostonTest.y)
 }
 
 min(all)
-hist(all)
+hist(all, 100)
 which.min(all)
 
 misclassRate <- mean(knn.pred != bostonTest.y)

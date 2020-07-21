@@ -48,6 +48,8 @@ geocodeFileFull <- tidygeocoder::geocode(.tbl = temp, address = address, method 
 geocodeFile <- geocodeFileFull
 geocodeFile
 geocodeFile %>% filter(is.na(latitude))
+
+?geocode
 ```
 
 
@@ -58,7 +60,7 @@ register_google(key = k)
 
 
 ```{r}
-map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+map <- get_map(location = 'Boston', zoom = 11, maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = geocodeFile, mapping = aes(x = longitude, y = latitude, color = factor(Area)), position = "jitter")
 ```
 

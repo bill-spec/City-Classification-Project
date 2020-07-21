@@ -22,8 +22,6 @@ bostonPrediction$type <-  as.factor(bostonPrediction$type)
 
 unique(bostonPrediction$type)
 
-
-
 #Taking only the top results
 bostonPrediction %>% group_by(type) %>% summarise(count = n()) %>% arrange(count)
 bostonPrediction <- bostonPrediction %>% filter(type == c("suite","ranch","apartment","house"))
