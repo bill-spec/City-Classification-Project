@@ -1,7 +1,7 @@
 ---
-title: "All Geocoded"
+title: "All Geocoded LA"
 author: "Bill Lang"
-date: "7/3/2020"
+date: "7/27/2020"
 output: html_document
 ---
 
@@ -13,24 +13,26 @@ library(ggmap)
 
 
 ```{r}
-load(file = "boston.RData")
-boston
+la <- read.csv("C:/Users/Billy/Desktop/hipHop/hiphop_la.csv")
+save(la, file = "LA.RData")
+load(file = "LA.RData")
+la
 ```
 
 
 ```{r}
-boston$Area <- tolower(boston$Area)
-boston$Street <- tolower(boston$Street)
-boston <- boston %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
-boston$Address <- paste(boston$Address, ", MA")
-boston
+la$Area <- tolower(la$Area)
+la$Street <- tolower(la$Street)
+la <- la %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
+la$Address <- paste(la$Address, ", CA")
+la
 ```
 
 Geocoding and saving the files same as before. 
  
 ```{r}
-#geocoded <- tidygeocoder::geocode(.tbl = boston, address = Address, method = "osm", lat = latitude, long = longitude)
-#save(geocoded, file = "allBoston.RData")
+geocoded <- tidygeocoder::geocode(.tbl = la, address = Address, method = "osm", lat = latitude, long = longitude)
+save(geocoded, file = "allLA.RData")
 ```
 
 

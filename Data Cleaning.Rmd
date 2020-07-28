@@ -1,0 +1,83 @@
+---
+title: "Data Cleaning"
+author: "Bill Lang"
+date: "7/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+Capitalization Function 
+
+```{r}
+capitalizeRent <- function(dataFrame){
+  
+  dataFrame$numericFrequency <- ifelse(grepl(pattern = "m",dataFrame$Frequency), 12, 
+                            ifelse(grepl(pattern = "year",dataFrame$Frequency), 1,
+                            ifelse(grepl(pattern = "ann",dataFrame$Frequency), 1,
+                            ifelse(grepl(pattern = "week",dataFrame$Frequency),52, 12))))
+  
+  load(file = "Capitalization.RData")
+  dataFrame <- dataFrame %>% left_join(capitalizationRate, by = c("Year" = "year"))
+  
+  dataFrame$Sale.price <- as.numeric(gsub(",","",dataFrame$Sale.price))
+  dataFrame$capitalizedPrice <- ifelse( (!is.na(dataFrame$Sale.price) & (dataFrame$Sale.price != "") ), 
+                                        dataFrame$Sale.price, 
+                                        dataFrame$numericFrequency*dataFrame$cap*dataFrame$Rent.price)
+  dataFrame$capitalizedPrice <- round(dataFrame$capitalizedPrice,2)
+  return(dataFrame)
+}
+```
+
+Cleaning the Dataset. Pulling in an already Geocoded Dataset.
+
+```{r}
+load(file = "allBoston.RData")
+```
+
+Capitalize the Rent
+
+```{r}
+bostonData <- capitalizeRent(geocoded)
+bostonData
+```
+
+Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 
+
+```{r}
+bostonData$Area <- tolower(bostonData$Area)
+bostonData$Street <- tolower(bostonData$Street)
+
+bostonData$Area <- as.factor(bostonData$Area)
+
+bostonData$Price.type <- tolower(bostonData$Price.type)
+bostonData$Price.type <- gsub('income', 'rent', bostonData$Price.type)
+bostonData$Price.type <- as.factor(bostonData$Price.type)
+
+bostonData$Type <- tolower(bostonData$Type)
+bostonData$Type <- as.factor(bostonData$Type)
+
+bostonData$Column <- tolower(bostonData$Column)
+bostonData$Total.rooms <- as.integer(bostonData$Total.rooms)
+
+#5 is the mean of totalrooms
+bostonData <- bostonData %>% mutate(Total.rooms = replace_na(Total.rooms,5))
+```
+
+```{r}
+save(bostonData, file = "cleanBoston.RData")
+```
+
+
+Export 
+
+```{r}
+knn <- bostonData %>% mutate(type = ifelse(Price.type == "sale", 1,0)) %>% select(Area, latitude, longitude, capitalizedPrice, Total.rooms, Year, type)
+knn
+write.csv(knn, file = "C:/Users/the36/Desktop/KNN.csv")
+```
+
+
