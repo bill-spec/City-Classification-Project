@@ -65,7 +65,7 @@ Model Building on the first 15,000
 This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
  
 ```{r}
-modelData <- firstGeocodeFile 
+modelData <- bostonAddress 
 set.seed(343)
 shuf <- sample(nrow(modelData))
 modelData <- modelData[shuf,]
@@ -99,7 +99,7 @@ register_google(key = k)
 
 ```{r}
 map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)+ theme(legend.position = "none")
 ```
 
 

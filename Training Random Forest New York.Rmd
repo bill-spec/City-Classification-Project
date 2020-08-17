@@ -1,0 +1,205 @@
+---
+title: "Training Random Forest"
+author: "Bill Lang"
+date: "7/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidygeocoder)
+library(ggmap)
+library(randomForest)
+```
+
+
+This first half will construct a random forest model on the 15,713 observations that have a full address and an area specification in the top 50.
+
+Reading in file.
+
+```{r}
+load(file = "cleanNY.RData")
+NYData
+```
+
+Removing areas with no information. 
+
+```{r}
+NYData <- NYData %>% filter(Column.Location != "") 
+```
+
+Finding the top 50 labeled areas.
+
+```{r}
+NYData$Column.Location <- tolower(NYData$Column.Location)
+tbl <- NYData %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreasNY <- tbl[1:10,]$Column.Location
+listOfAreasNY
+save(listOfAreasNY, file = "NYAreas.RData")
+```
+
+Find the observations with a top 50 area. 
+
+```{r}
+NYData <- NYData %>% filter(Column.Location %in% listOfAreasNY) 
+```
+
+Finding the 15,713 observations with full addresses.
+
+```{r}
+#NYData <- NYData %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No != "")
+NYData <- NYData %>% filter(!is.na(latitude))
+NYData$Column.Location <- as.factor(NYData$Column.Location)
+```
+
+Filtering outliers in the geocoding process. These results were so far outside of Boston they are being treated as failed geocoding result and not considered.
+
+```{r}
+firstGeocodeFile$Area <- as.factor(firstGeocodeFile$Area)
+
+firstGeocodeFile <- firstGeocodeFile %>% filter(!is.na(latitude))
+#firstGeocodeFile <- firstGeocodeFile %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
+```
+
+Model Building on the first 15,000
+
+This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
+ 
+```{r}
+NYData
+modelData <- NYData 
+set.seed(343)
+shuf <- sample(nrow(modelData))
+modelData <- modelData[shuf,]
+train <- sample(nrow(modelData)*.8)
+dataTrain <- modelData[train,]
+dataTest <- modelData[-train,]
+```
+
+
+```{r}
+bag <- randomForest(Column.Location ~ latitude + longitude + Year + capitalizedPrice, data = dataTrain, ntree = 1000, importance = TRUE)
+yhat.rf <- predict(bag, newdata = dataTest)
+misclassRate <- mean(yhat.rf != dataTest$Column.Location)
+misclassRate
+
+importance(bag, class = 1)
+importance(bag, type = 2)
+```
+
+```{r}
+predicted <- cbind(yhat.rf, bostonTest)
+predicted
+```
+
+We can then map the results using the ggmaps package below to manuely search for any errors.
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+```{r}
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
+```
+
+
+Full Model
+
+Using all the available data we construct a full model to use for the rest of the analysis. 
+
+```{r}
+fullModel <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.type + capitalizedPrice, data = firstGeocodeFile, ntree = 1000, mtry = 2, importance = TRUE)
+```
+
+```{r}
+importance(fullModel, type = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The next lines of code investigate how well this model performs on the 8871 observations that don't have a house number. 
+
+First we can re-clean the data from earlier to get the 8,871 observations without a good house number.
+
+```{r}
+load("cleanBoston.RData")
+```
+
+```{r}
+bostonData <- bostonData %>% filter(Area != "")
+```
+
+```{r}
+bostonData$Area <- tolower(bostonData$Area)
+bostonData <- bostonData %>% filter(Area %in% listOfAreas)
+bostonAddress <- bostonData %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
+bostonAddress$Address <- paste(bostonAddress$Address, " , MA")
+```
+
+```{r}
+bostonAddress <- bostonAddress %>% filter(Area != "") %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No == "")
+```
+
+Cleaning the data same as before.
+
+```{r}
+geocodeFileNoHse <- geocodeFileNoHse %>% filter(!is.na(latitude))
+geocodeFileNoHse$Area <- as.factor(geocodeFileNoHse$Area)
+
+geocodeFileNoHse <- geocodeFileNoHse %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
+
+```
+
+
+Predict the data from the previous model and get another misclassification rate. 
+
+```{r}
+yhat.rf <- predict(fullModel, newdata = geocodeFileNoHse)
+predicted <- cbind(yhat.rf, geocodeFileNoHse)
+predicted
+
+misclassNoHse <- mean(yhat.rf != geocodeFileNoHse$Area)
+misclassNoHse
+```
+
+Mapping the predicted results. 
+
+```{r}
+map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)
+```
+
+
+
+

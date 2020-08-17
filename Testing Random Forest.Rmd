@@ -38,7 +38,7 @@ predicted
 
 ```{r}
 map <- get_map(location = 'Boston', zoom =8 , maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)+ theme(legend.position = "none")
 ```
 
 

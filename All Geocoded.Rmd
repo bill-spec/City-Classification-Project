@@ -51,7 +51,19 @@ register_google(key = k)
 
 
 ```{r}
-map <- get_map(location = 'Boston', zoom = 11, maptype = "terrain-background", source = 'google', color = 'color')
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = geocoded, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+```
+
+```{r}
+a <- geocoded %>% group_by(Area) %>% summarise(AreaFrequency = n()) %>% arrange(desc)
+a
+barplot(height = a$AreaFrequency)
+?barplot
+```
+
+```{r}
+bar_plot(geocoded$Area)
+length(unique(geocoded$Area))
 ```
 

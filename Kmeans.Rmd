@@ -17,15 +17,32 @@ bostonData
 ```
 
 ```{r}
-x <- bostonData %>% mutate(num = ifelse(Price.type == "sale", 1,0)) %>% select(latitude, longitude, num, Total.rooms)  
-x <- na.omit(x)
+noNA = bostonData %>% filter(!is.na(latitude) & !is.na(capitalizedPrice))
+averages <- noNA %>% group_by(Area) %>% summarise(
+                                             meanPrice = mean(capitalizedPrice),
+                                             meanLat = mean(latitude),
+                                             meanLon = mean(longitude)) %>% select(-Area)
+
+averages
+averages<-averages %>% filter(meanLon > -73) %>% filter(meanLon < -69)
+averages<-averages %>% filter(meanLat > 41) %>% filter(meanLat < 44)
+x <- averages
+
+x$meanPrice = scale(x$meanPrice)
+x$meanLat = scale(x$meanLat)
+x$meanLon = scale(x$meanLon)
+
+x$meanLat = 3*x$meanLat
+x$meanLon = 3*x$meanLon
+
+x
 mod <- kmeans(x,50)
 
 z <- as.data.frame(x = mod$cluster)  
 names(z)[1] <- c("class")
 z$class <- as.factor(z$class)
 z
-y <- cbind(x,z)
+y <- cbind(averages,z)
 y
 ```
 
@@ -39,8 +56,8 @@ register_google(key = k)
 
 
 ```{r}
-map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = y, mapping = aes(x = longitude, y = latitude,color = factor(class)), size = 1)
+map <- get_map(location = 'Boston', zoom = 11, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = y, mapping = aes(x = meanLon, y = meanLat,color = factor(class)), size = 2) + theme(legend.position = "none")
 ```
 
 ```{r}

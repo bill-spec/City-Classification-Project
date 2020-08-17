@@ -13,8 +13,6 @@ library(ggmap)
 
 
 ```{r}
-la <- read.csv("C:/Users/Billy/Desktop/hipHop/hiphop_la.csv")
-save(la, file = "LA.RData")
 load(file = "LA.RData")
 la
 ```
@@ -25,24 +23,122 @@ la$Area <- tolower(la$Area)
 la$Street <- tolower(la$Street)
 la <- la %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
 la$Address <- paste(la$Address, ", CA")
-la
+la$Address <- trimws(la$Address)
+la$Address <- sapply(la$Address, function(x) gsub("#", "", x))
+
+
 ```
+
+Subsetting to test'
+
+#First Run through with "los angeles" lost 12,000
+
+```{r}
+shuf <- sample(1:nrow(la))
+la_shuf <- la[shuf,]
+laSUB40 <- la_shuf[1:40000,]
+laSUB40
+```
+
+First 40000
+
+```{r}
+geocoded40 <- tidygeocoder::geocode(.tbl = laSUB40, address = Address, method = "osm", lat = latitude, long = longitude)
+geocoded40
+geocoded40 %>% filter(is.na(latitude))
+```
+
+
+Middle 40000-80000
+
+```{r}
+laSUB80 <- la_shuf[40001:80000,]
+laSUB80
+```
+
+
+```{r}
+geocoded80 <- tidygeocoder::geocode(.tbl = laSUB80, address = Address, method = "osm", lat = latitude, long = longitude)
+geocoded80
+```
+
+
+```{r}
+save(geocoded40, geocoded80, file = "TempLA.RData")
+```
+
+
+
+Middle 80000-rest
+
+```{r}
+laSUBRest <- la_shuf[80001:nrow(la),]
+laSUBRest
+```
+
+
+```{r}
+geocodedRest <- tidygeocoder::geocode(.tbl = laSUBRest, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodedRest
+```
+
+
+```{r}
+save(geocoded40, geocoded80, geocodedRest ,file = "TempLA.RData")
+load(file = "TempLA.RData")
+```
+
+
+
+
+```{r}
+row.names(laSUB) <- c(1:10000)
+laSUB
+laSUB[laSUB$Address == "lenox  , Los Angeles",]
+print(laSUB,3000:4000)
+view(laSUB)
+```
+
+
+
+```{r}
+
+
+laSUB[laSUB$Address == "7349 woodley 4 van nuys , Los Angeles",]
+TEMP <- '7349 woodley >4 van nuys , Los Angeles'
+TEMP <- as.data.frame(TEMP)
+TEMP <- as.character(TEMP)
+TEMP
+
+TEMP <- data.frame(lapply(TEMP, as.character), stringsAsFactors=FALSE)
+
+geocodedTEMP <- tidygeocoder::geocode(.tbl = TEMP, address = TEMP, method = "osm", lat = latitude, long = longitude)
+geocodedTEMP
+```
+
+
+
+
+
+
+
 
 Geocoding and saving the files same as before. 
- 
+  
 ```{r}
-geocoded <- tidygeocoder::geocode(.tbl = la, address = Address, method = "osm", lat = latitude, long = longitude)
-save(geocoded, file = "allLA.RData")
+geocodedLA <- tidygeocoder::geocode(.tbl = laSUB, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodedLA
+save(geocodedLA, file = "allLA.RData")
 ```
 
 
 ```{r}
-load(file = "allBoston.RData")
-geocoded 
+load(file = "allLA.RData")
+geocodedLA 
 ```
 
 ```{r}
-geocoded <- geocoded %>% select(Year,Month,Date,Price.type,Total.rooms,Column,Area,Hse.No,Street,Cross.Street,Address,Type,latitude,longitude)
+geocodedLA <- geocodedLA %>% select(Year,Month,Date,Price.type,Total.rooms,Column,Area,Hse.No,Street,Cross.Street,Address,Type,latitude,longitude)
 ```
 
 
@@ -52,8 +148,8 @@ register_google(key = k)
 ```
 
 
-```{r}
+```{r} 
 map <- get_map(location = 'Boston', zoom = 11, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = geocoded, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+ggmap(map) + geom_point(data = geocodedLA, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
 ```
 
