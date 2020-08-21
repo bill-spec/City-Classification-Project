@@ -21,8 +21,8 @@ la
 ```{r}
 la$Area <- tolower(la$Area)
 la$Street <- tolower(la$Street)
-la <- la %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
-la$Address <- paste(la$Address, ", CA")
+la <- la %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
+la$Address <- paste(la$Address, ", Los Angeles California")
 la$Address <- trimws(la$Address)
 la$Address <- sapply(la$Address, function(x) gsub("#", "", x))
 
@@ -34,8 +34,9 @@ Subsetting to test'
 #First Run through with "los angeles" lost 12,000
 
 ```{r}
-shuf <- sample(1:nrow(la))
-la_shuf <- la[shuf,]
+#shuf <- sample(1:nrow(la))
+#la_shuf <- la[shuf,]
+la_shuf <- la
 laSUB40 <- la_shuf[1:40000,]
 laSUB40
 ```
@@ -84,62 +85,29 @@ geocodedRest
 
 
 ```{r}
-save(geocoded40, geocoded80, geocodedRest ,file = "TempLA.RData")
-load(file = "TempLA.RData")
-```
-
-
-
-
-```{r}
-row.names(laSUB) <- c(1:10000)
-laSUB
-laSUB[laSUB$Address == "lenox  , Los Angeles",]
-print(laSUB,3000:4000)
-view(laSUB)
-```
-
-
-
-```{r}
-
-
-laSUB[laSUB$Address == "7349 woodley 4 van nuys , Los Angeles",]
-TEMP <- '7349 woodley >4 van nuys , Los Angeles'
-TEMP <- as.data.frame(TEMP)
-TEMP <- as.character(TEMP)
-TEMP
-
-TEMP <- data.frame(lapply(TEMP, as.character), stringsAsFactors=FALSE)
-
-geocodedTEMP <- tidygeocoder::geocode(.tbl = TEMP, address = TEMP, method = "osm", lat = latitude, long = longitude)
-geocodedTEMP
-```
-
-
-
-
-
-
-
-
-Geocoding and saving the files same as before. 
-  
-```{r}
-geocodedLA <- tidygeocoder::geocode(.tbl = laSUB, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodedLA
-save(geocodedLA, file = "allLA.RData")
-```
-
-
-```{r}
+save(geocoded40, geocoded80, geocodedRest ,file = "allLA.RData")
 load(file = "allLA.RData")
-geocodedLA 
 ```
+
+```{r}
+geocoded40
+geocoded80
+geocodedRest
+
+geocodedLA <- rbind(geocoded40,geocoded80,geocodedRest)
+geocodedLA
+```
+
+
 
 ```{r}
 geocodedLA <- geocodedLA %>% select(Year,Month,Date,Price.type,Total.rooms,Column,Area,Hse.No,Street,Cross.Street,Address,Type,latitude,longitude)
 ```
+
+```{r}
+geocodedLA
+```
+
 
 
 ```{r}
@@ -148,8 +116,13 @@ register_google(key = k)
 ```
 
 
+```{r}
+data <- geocodedLA %>% filter(!is.na(latitude))
+```
+
+
 ```{r} 
-map <- get_map(location = 'Boston', zoom = 11, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = geocodedLA, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+map <- get_map(location = 'Los Angeles', zoom = 2, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = data, mapping = aes(x = longitude, y = latitude), size = 0.1) + theme(legend.position = "none")
 ```
 
