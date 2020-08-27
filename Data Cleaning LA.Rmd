@@ -15,6 +15,7 @@ Capitalization Function
 ```{r}
 capitalizeRent <- function(dataFrame){
   
+  dataFrame$Frequency <- as.character(dataFrame$Frequency)
   dataFrame$numericFrequency <- ifelse(grepl(pattern = "m",dataFrame$Frequency), 12, 
                             ifelse(grepl(pattern = "year",dataFrame$Frequency), 1,
                             ifelse(grepl(pattern = "ann",dataFrame$Frequency), 1,
@@ -37,7 +38,7 @@ capitalizeRent <- function(dataFrame){
 Cleaning the Dataset. Pulling in an already Geocoded Dataset.
 
 ```{r}
-load(file = "allLA.RData")
+#load(file = "allLA.RData")
 geocodedLA
 ```
 
@@ -52,10 +53,10 @@ LAData
 Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 
 
 ```{r}
-LAData$Area <- tolower(LAData$Area)
+LAData$editArea <- tolower(LAData$editArea)
 LAData$Street <- tolower(LAData$Street)
 
-LAData$Area <- as.factor(LAData$Area)
+LAData$editArea <- as.factor(LAData$editArea)
 
 LAData$Price.type <- tolower(LAData$Price.type)
 LAData$Price.type <- gsub('income', 'rent', LAData$Price.type)
@@ -65,7 +66,7 @@ LAData$Type <- tolower(LAData$Type)
 LAData$Type <- as.factor(LAData$Type)
 
 LAData$Column <- tolower(LAData$Column)
-LAData$Totalrooms <- as.integer(LAData$Totalrooms)
+#LAData$Totalrooms <- as.integer(LAData$Totalrooms)
 ```
 
 ```{r}
