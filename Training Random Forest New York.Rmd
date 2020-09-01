@@ -30,8 +30,6 @@ NYData <- NYData %>% filter(Column.Location != "")
 
 #Removing right adjustment
 NYData$Column.Location <- trimws(NYData$Column.Location, which = c("right"))
-
-
 #Manual Cleaning 
 NYData$Column.Location <- sub("nj","new jersey", NYData$Column.Location)
 NYData$Column.Location <- sub("ny","new york", NYData$Column.Location)
@@ -42,54 +40,59 @@ NYData$Column.Location <- sub(" ","", NYData$Column.Location)
 
 ```
 
-<<<<<<< HEAD
 
 
 
-Finding the top 50 labeled areas.
-=======
-Finding the top 15 labeled areas.
->>>>>>> 5ef8f345f47bba5070d1b4c9c785684fa56d1d3f
+```{r}
+#Saying that if it follows a certain pattern it is added to the new calculated column
+
+pattern3 <- c("manhattan|westchester|newjersey|westside|eastside|queens|longisland|brooklyn|nassausuffolk|connecticut|bronx|queens& long island|newyork|westchestercounty|queenslongisland|statenisland")
+newYorkExport <- newYork1 %>% mutate(Coarse.Geo = ifelse(
+  grepl(pattern3, Column.Location, ignore.case = TRUE), as.character(Column.Location), 1))
+```
+
+
 
 ```{r}
 NYData$Column.Location <- tolower(NYData$Column.Location)
 
 #More column.location cleaning here
-ny$Column.Location <- trimws(ny$Column.Location, which = c("right"))
-ny$Column.Location <- tolower(ny$Column.Location)
-ny$Column.Location <- sub("nj","new jersey", ny$Column.Location)
-ny$Column.Location <- sub("ny","new york", ny$Column.Location)
-ny$Column.Location <- sub("li","long island", ny$Column.Location)
-ny$Column.Location <- sub("-","", ny$Column.Location)
-ny$Column.Location <- sub("&","", ny$Column.Location)
-ny$Column.Location <- sub(" ","", ny$Column.Location)
-ny$Column.Location <- sub("county","", ny$Column.Location)
-ny$Column.Location <- sub(" state","", ny$Column.Location)
-ny$Column.Location <- sub("queens long island","queens", ny$Column.Location)
-ny$Column.Location <- sub("queenslongisland","queens", ny$Column.Location)
-ny$Column.Location <- sub("queensand long island","queens", ny$Column.Location)
-ny$Column.Location <- sub("brooklynlongisland","brooklyn", ny$Column.Location)
-ny$Column.Location <- sub(" st","", ny$Column.Location)
-ny$Column.Location <- sub("newengland","", ny$Column.Location)
-ny$Column.Location <- sub("manhattanbronx","manhattan", ny$Column.Location)
-ny$Column.Location <- sub("ville","", ny$Column.Location)
-ny$Column.Location <- sub("brooklynqueens","brooklyn", ny$Column.Location)
+ny$Coarse.Geo <- trimws(ny$Coarse.Geo, which = c("right"))
+ny$Coarse.Geo <- tolower(ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("nj","new jersey", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("ny","new york", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("li","long island", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("-","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("&","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub(" ","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("county","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub(" state","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("queens long island","queens", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("queenslongisland","queens", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("queensand long island","queens", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("brooklynlongisland","brooklyn", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub(" st","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("newengland","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("manhattanbronx","manhattan", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("ville","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("brooklynqueens","brooklyn", ny$Coarse.Geo)
 
-tbl <- NYData %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreasNY <- tbl[1:11,]$Column.Location
+tbl <- NYData %>% group_by(Coarse.Geo) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreasNY <- tbl[1:12,]$Coarse.Geo
 listOfAreasNY
+
 save(listOfAreasNY, file = "NYAreas.RData")
 ```
 
 Find the observations with a top 50 area. 
 
 ```{r}
-NYData <- NYData %>% filter(Column.Location %in% listOfAreasNY) 
+NYData <- NYData %>% filter(Coarse.Geo %in% listOfAreasNY) 
 ```
 
 ```{r}
 NYData <- NYData %>% filter(!is.na(latitude))
-NYData$Column.Location <- as.factor(NYData$Column.Location)
+NYData$Coarse.Geo <- as.factor(NYData$Coarse.Geo)
 ```
 
 Model Building on the first batch
@@ -109,9 +112,9 @@ dataTest <- modelData[-train,]
 
 
 ```{r}
-bag <- randomForest(Column.Location ~ latitude + longitude + Year + capitalizedPrice, data = dataTrain, ntree = 1000, importance = TRUE)
+bag <- randomForest(Coarse.Geo ~ latitude + longitude + Year + capitalizedPrice, data = dataTrain, ntree = 1000, importance = TRUE)
 yhat.rf <- predict(bag, newdata = dataTest)
-misclassRate <- mean(yhat.rf != dataTest$Column.Location)
+misclassRate <- mean(yhat.rf != dataTest$Coarse.Geo)
 misclassRate
 ```
 
@@ -129,12 +132,12 @@ register_google(key = k)
 
 ```{r}
 map <- get_map(location = 'New York', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-<<<<<<< HEAD
+
 ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
-=======
+
 ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Column.Location)), size = 1) +
   theme(legend.position = "none")
->>>>>>> 5ef8f345f47bba5070d1b4c9c785684fa56d1d3f
+
 ```
 
 
@@ -165,15 +168,3 @@ fullModel <- randomForest(Column.Location ~ latitude + longitude + Year + capita
 
 
 
-
-
-
-
-
-
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> 5ef8f345f47bba5070d1b4c9c785684fa56d1d3f
