@@ -21,8 +21,10 @@ ny
 ```{r}
 ny$Area <- tolower(ny$Area)
 ny$Street <- tolower(ny$Street)
+ny$Street <- tolower(ny$Column.Location)
+ny$Street <- tolower(ny$Area)
 ny <- ny %>% unite(Address, c("Hse.No","Street","Area","Column.Location"), sep = " ",remove = FALSE)
-ny$Address <- paste(ny$Address, ", NY")
+ny$Address <- paste(ny$Address, "")
 ny
 ```
 
@@ -37,11 +39,17 @@ save(geocodedNY, file = "allNY.RData")
 ```{r}
 load(file = "allNY.RData")
 geocodedNY 
-geocodedNY %>% filter(is.na(latitude))
+geocodedNY$Street <- tolower(geocodedNY$Column.Location)
+geocodedNY$Street <- tolower(geocodedNY$Area)
+```
+
+
+```{r}
+incorrectMatches <- geocodedNY %>% filter((is.na(latitude) | (latitude < 38) | (latitude > 44) | (longitude < -78) | (longitude > -71)) )
 ```
 
 ```{r}
-geocodedNY <- geocodedNY %>% select(Year,Month,Date,Price.type,Total.rooms,Column,Area,Hse.No,Street,Cross.Street,Address,Type,latitude,longitude)
+correctMatches <- geocodedNY %>% filter(!(is.na(latitude) | (latitude < 38) | (latitude > 44) | (longitude < -78) | (longitude > -71)) )
 ```
 
 
@@ -51,8 +59,9 @@ register_google(key = k)
 ```
 
 
+
 ```{r}
-map <- get_map(location = 'New York', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = geocodedNY, mapping = aes(x = longitude, y = latitude, color = factor(Column.Location)), size = 1) + theme(legend.position = "none")
+map <- get_map(location = 'New York', zoom = 7, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = correctMatches, mapping = aes(x = longitude, y = latitude, color = factor(Column.Location)), size = 1) + theme(legend.position = "none")
 ```
 

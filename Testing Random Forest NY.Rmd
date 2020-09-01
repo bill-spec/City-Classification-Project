@@ -1,0 +1,54 @@
+---
+title: "Testing Random Forest NY"
+author: "Bill Lang"
+date: "7/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidygeocoder)
+library(ggmap)
+```
+
+
+Next we can take the 37,506 observations that aren't inside the top 50 regions, predict the most likely region to classify them in, and investigate if the results seem correct.
+
+```{r}
+load("cleanNY.RData")
+```
+
+```{r}
+load(file = "NYAreas.RData")
+correctMatches
+listOfAreasNY
+NYAddresses <- correctMatches %>% filter(!(Column.Location %in% listOfAreasNY))
+NYAddresses
+```
+
+Predict the data using the previous model and map the results for validation. 
+
+```{r}
+yhat.rf <- predict(fullModel, newdata = NYAddresses)
+predicted <- cbind(yhat.rf, NYAddresses)
+predicted
+```
+
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r}
+map <- get_map(location = 'New York', zoom =7 , maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)+ theme(legend.position = "none")
+```
+
+
+
+
+
+

@@ -42,15 +42,41 @@ NYData$Column.Location <- sub(" ","", NYData$Column.Location)
 
 ```
 
+<<<<<<< HEAD
 
 
 
 Finding the top 50 labeled areas.
+=======
+Finding the top 15 labeled areas.
+>>>>>>> 5ef8f345f47bba5070d1b4c9c785684fa56d1d3f
 
 ```{r}
 NYData$Column.Location <- tolower(NYData$Column.Location)
+
+#More column.location cleaning here
+ny$Column.Location <- trimws(ny$Column.Location, which = c("right"))
+ny$Column.Location <- tolower(ny$Column.Location)
+ny$Column.Location <- sub("nj","new jersey", ny$Column.Location)
+ny$Column.Location <- sub("ny","new york", ny$Column.Location)
+ny$Column.Location <- sub("li","long island", ny$Column.Location)
+ny$Column.Location <- sub("-","", ny$Column.Location)
+ny$Column.Location <- sub("&","", ny$Column.Location)
+ny$Column.Location <- sub(" ","", ny$Column.Location)
+ny$Column.Location <- sub("county","", ny$Column.Location)
+ny$Column.Location <- sub(" state","", ny$Column.Location)
+ny$Column.Location <- sub("queens long island","queens", ny$Column.Location)
+ny$Column.Location <- sub("queenslongisland","queens", ny$Column.Location)
+ny$Column.Location <- sub("queensand long island","queens", ny$Column.Location)
+ny$Column.Location <- sub("brooklynlongisland","brooklyn", ny$Column.Location)
+ny$Column.Location <- sub(" st","", ny$Column.Location)
+ny$Column.Location <- sub("newengland","", ny$Column.Location)
+ny$Column.Location <- sub("manhattanbronx","manhattan", ny$Column.Location)
+ny$Column.Location <- sub("ville","", ny$Column.Location)
+ny$Column.Location <- sub("brooklynqueens","brooklyn", ny$Column.Location)
+
 tbl <- NYData %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreasNY <- tbl[1:10,]$Column.Location
+listOfAreasNY <- tbl[1:11,]$Column.Location
 listOfAreasNY
 save(listOfAreasNY, file = "NYAreas.RData")
 ```
@@ -61,24 +87,12 @@ Find the observations with a top 50 area.
 NYData <- NYData %>% filter(Column.Location %in% listOfAreasNY) 
 ```
 
-Finding the 15,713 observations with full addresses.
-
 ```{r}
-#NYData <- NYData %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No != "")
 NYData <- NYData %>% filter(!is.na(latitude))
 NYData$Column.Location <- as.factor(NYData$Column.Location)
 ```
 
-Filtering outliers in the geocoding process. These results were so far outside of Boston they are being treated as failed geocoding result and not considered.
-
-```{r}
-firstGeocodeFile$Area <- as.factor(firstGeocodeFile$Area)
-
-firstGeocodeFile <- firstGeocodeFile %>% filter(!is.na(latitude))
-#firstGeocodeFile <- firstGeocodeFile %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
-```
-
-Model Building on the first 15,000
+Model Building on the first batch
 
 This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
  
@@ -99,13 +113,10 @@ bag <- randomForest(Column.Location ~ latitude + longitude + Year + capitalizedP
 yhat.rf <- predict(bag, newdata = dataTest)
 misclassRate <- mean(yhat.rf != dataTest$Column.Location)
 misclassRate
-
-importance(bag, class = 1)
-importance(bag, type = 2)
 ```
 
 ```{r}
-predicted <- cbind(yhat.rf, bostonTest)
+predicted <- cbind(yhat.rf, dataTest)
 predicted
 ```
 
@@ -118,7 +129,12 @@ register_google(key = k)
 
 ```{r}
 map <- get_map(location = 'New York', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+<<<<<<< HEAD
 ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
+=======
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Column.Location)), size = 1) +
+  theme(legend.position = "none")
+>>>>>>> 5ef8f345f47bba5070d1b4c9c785684fa56d1d3f
 ```
 
 
@@ -127,11 +143,7 @@ Full Model
 Using all the available data we construct a full model to use for the rest of the analysis. 
 
 ```{r}
-fullModel <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.type + capitalizedPrice, data = firstGeocodeFile, ntree = 1000, mtry = 2, importance = TRUE)
-```
-
-```{r}
-importance(fullModel, type = 1)
+fullModel <- randomForest(Column.Location ~ latitude + longitude + Year + capitalizedPrice, data = NYData, ntree = 500, mtry = 2, importance = TRUE)
 ```
 
 
@@ -159,6 +171,9 @@ importance(fullModel, type = 1)
 
 
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 5ef8f345f47bba5070d1b4c9c785684fa56d1d3f

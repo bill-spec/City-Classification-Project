@@ -15,6 +15,7 @@ Capitalization Function
 ```{r}
 capitalizeRent <- function(dataFrame){
   
+  dataFrame$Frequency <- as.character(dataFrame$Frequency)
   dataFrame$numericFrequency <- ifelse(grepl(pattern = "m",dataFrame$Frequency), 12, 
                             ifelse(grepl(pattern = "year",dataFrame$Frequency), 1,
                             ifelse(grepl(pattern = "ann",dataFrame$Frequency), 1,
@@ -44,7 +45,8 @@ geocodedNY
 Capitalize the Rent
 
 ```{r}
-NYData <- capitalizeRent(geocodedNY)
+correctMatches
+NYData <- capitalizeRent(correctMatches)
 NYData <- NYData %>% filter(!is.na(capitalizedPrice))
 NYData
 ```
