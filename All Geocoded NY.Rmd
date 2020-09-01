@@ -45,7 +45,7 @@ geocodedNY$Street <- tolower(geocodedNY$Area)
 
 
 ```{r}
-incorrectMatches <- geocodedNY %>% filter(!(is.na(latitude) | (latitude < 38) | (latitude > 44) | (longitude < -78) | (longitude > -71)) )
+incorrectMatches <- geocodedNY %>% filter((is.na(latitude) | (latitude < 38) | (latitude > 44) | (longitude < -78) | (longitude > -71)) )
 ```
 
 ```{r}

@@ -37,6 +37,12 @@ predicted
 
 
 ```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r}
 map <- get_map(location = 'New York', zoom =7 , maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)+ theme(legend.position = "none")
 ```

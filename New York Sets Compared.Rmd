@@ -1,0 +1,61 @@
+---
+title: "New York Work"
+author: "Bill Lang"
+date: "8/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+load(file = "NY.RData")
+ny
+```
+
+
+```{r}
+ny$Column.Location <- trimws(ny$Column.Location, which = c("right"))
+ny$Column.Location <- tolower(ny$Column.Location)
+ny$Column.Location <- sub("nj","new jersey", ny$Column.Location)
+ny$Column.Location <- sub("ny","new york", ny$Column.Location)
+ny$Column.Location <- sub("li","long island", ny$Column.Location)
+ny$Column.Location <- sub("-","", ny$Column.Location)
+ny$Column.Location <- sub("&","", ny$Column.Location)
+ny$Column.Location <- sub(" ","", ny$Column.Location)
+ny$Column.Location <- sub("county","", ny$Column.Location)
+ny$Column.Location <- sub(" state","", ny$Column.Location)
+ny$Column.Location <- sub("queens long island","queens", ny$Column.Location)
+ny$Column.Location <- sub("queenslongisland","queens", ny$Column.Location)
+ny$Column.Location <- sub("queensand long island","queens", ny$Column.Location)
+ny$Column.Location <- sub("brooklynlongisland","brooklyn", ny$Column.Location)
+ny$Column.Location <- sub(" st","", ny$Column.Location)
+ny$Column.Location <- sub("newengland","", ny$Column.Location)
+ny$Column.Location <- sub("manhattanbronx","manhattan", ny$Column.Location)
+ny$Column.Location <- sub("ville","", ny$Column.Location)
+ny$Column.Location <- sub("brooklynqueens","brooklyn", ny$Column.Location)
+
+pattern3 <- c("^manhattan$|^westchester$|^newjersey$|^westside$|^eastside$|^queens$|^longisland$|^brooklyn$|^nassausuffolk$|^connecticut$|^bronx$|^queens& long island$|^westchestercounty$|^queenslongisland$|^statenisland$")
+
+coarse <- ny %>% mutate(coarse = ifelse(grepl(pattern3, Column.Location, ignore.case = TRUE), as.character(Column.Location), 1))
+missLocation <- coarse %>% filter(coarse == 1)
+ny
+
+
+ny %>% filter(Area != "") %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+```
+
+
+
+```{r}
+correctMatches 
+incorrectMatches
+```
+
+```{r}
+missLocation %>% filter(Street != "")
+```
+

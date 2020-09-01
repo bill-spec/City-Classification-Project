@@ -35,10 +35,28 @@ Finding the top 15 labeled areas.
 NYData$Column.Location <- tolower(NYData$Column.Location)
 
 #More column.location cleaning here
-
+ny$Column.Location <- trimws(ny$Column.Location, which = c("right"))
+ny$Column.Location <- tolower(ny$Column.Location)
+ny$Column.Location <- sub("nj","new jersey", ny$Column.Location)
+ny$Column.Location <- sub("ny","new york", ny$Column.Location)
+ny$Column.Location <- sub("li","long island", ny$Column.Location)
+ny$Column.Location <- sub("-","", ny$Column.Location)
+ny$Column.Location <- sub("&","", ny$Column.Location)
+ny$Column.Location <- sub(" ","", ny$Column.Location)
+ny$Column.Location <- sub("county","", ny$Column.Location)
+ny$Column.Location <- sub(" state","", ny$Column.Location)
+ny$Column.Location <- sub("queens long island","queens", ny$Column.Location)
+ny$Column.Location <- sub("queenslongisland","queens", ny$Column.Location)
+ny$Column.Location <- sub("queensand long island","queens", ny$Column.Location)
+ny$Column.Location <- sub("brooklynlongisland","brooklyn", ny$Column.Location)
+ny$Column.Location <- sub(" st","", ny$Column.Location)
+ny$Column.Location <- sub("newengland","", ny$Column.Location)
+ny$Column.Location <- sub("manhattanbronx","manhattan", ny$Column.Location)
+ny$Column.Location <- sub("ville","", ny$Column.Location)
+ny$Column.Location <- sub("brooklynqueens","brooklyn", ny$Column.Location)
 
 tbl <- NYData %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreasNY <- tbl[1:10,]$Column.Location
+listOfAreasNY <- tbl[1:11,]$Column.Location
 listOfAreasNY
 save(listOfAreasNY, file = "NYAreas.RData")
 ```
@@ -48,8 +66,6 @@ Find the observations with a top 50 area.
 ```{r}
 NYData <- NYData %>% filter(Column.Location %in% listOfAreasNY) 
 ```
-
-Finding the 15,713 observations with full addresses.
 
 ```{r}
 NYData <- NYData %>% filter(!is.na(latitude))
@@ -92,8 +108,9 @@ register_google(key = k)
 ```
 
 ```{r}
-map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
+map <- get_map(location = 'New York', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Column.Location)), size = 1) +
+  theme(legend.position = "none")
 ```
 
 
@@ -126,65 +143,6 @@ fullModel <- randomForest(Column.Location ~ latitude + longitude + Year + capita
 
 
 
-
-
-
-
-
-
-
-
-The next lines of code investigate how well this model performs on the 8871 observations that don't have a house number. 
-
-First we can re-clean the data from earlier to get the 8,871 observations without a good house number.
-
-```{r}
-load("cleanBoston.RData")
-```
-
-```{r}
-bostonData <- bostonData %>% filter(Area != "")
-```
-
-```{r}
-bostonData$Area <- tolower(bostonData$Area)
-bostonData <- bostonData %>% filter(Area %in% listOfAreas)
-bostonAddress <- bostonData %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
-bostonAddress$Address <- paste(bostonAddress$Address, " , MA")
-```
-
-```{r}
-bostonAddress <- bostonAddress %>% filter(Area != "") %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No == "")
-```
-
-Cleaning the data same as before.
-
-```{r}
-geocodeFileNoHse <- geocodeFileNoHse %>% filter(!is.na(latitude))
-geocodeFileNoHse$Area <- as.factor(geocodeFileNoHse$Area)
-
-geocodeFileNoHse <- geocodeFileNoHse %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
-
-```
-
-
-Predict the data from the previous model and get another misclassification rate. 
-
-```{r}
-yhat.rf <- predict(fullModel, newdata = geocodeFileNoHse)
-predicted <- cbind(yhat.rf, geocodeFileNoHse)
-predicted
-
-misclassNoHse <- mean(yhat.rf != geocodeFileNoHse$Area)
-misclassNoHse
-```
-
-Mapping the predicted results. 
-
-```{r}
-map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)
-```
 
 
 
