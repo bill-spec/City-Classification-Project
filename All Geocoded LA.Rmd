@@ -30,6 +30,140 @@ la$Address <- sapply(la$Address, function(x) gsub("#", "", x))
 la$Address <- sapply(la$Address, function(x) gsub("near", "", x))
 ```
 
+
+Just doing it all at once
+
+```{r}
+la
+geocodedAllAttemtpt <- tidygeocoder::geocode(.tbl = la, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodedAllAttemtpt
+```
+
+
+Subsetting to test with Los Angeles California
+
+#First Run through with "los angeles" lost 12,000
+
+```{r}
+#shuf <- sample(1:nrow(la))
+#la_shuf <- la[shuf,]
+la_shuf <- la
+laSUB40 <- la_shuf[1:40001,]
+laSUB40
+```
+
+First 40000
+
+```{r}
+geocoded40B <- tidygeocoder::geocode(.tbl = laSUB40, address = Address, method = "osm", lat = latitude, long = longitude)
+```
+
+
+
+```{r}
+save(geocoded40B, file = "TempLAB40.RData")
+load(file = "TempLAB40.RData")
+```
+
+
+
+Middle 40000-80000
+
+```{r}
+laSUB50 <- la_shuf[40002:50000,]
+laSUB60 <- la_shuf[50001:60000,]
+laSUB70 <- la_shuf[60001:70000,]
+laSUB80 <- la_shuf[70001:80000,]
+```
+
+
+```{r}
+geocoded50B <- tidygeocoder::geocode(.tbl = laSUB50, address = Address, method = "osm", lat = latitude, long = longitude)
+geocoded50B
+```
+
+
+```{r}
+geocoded60B <- tidygeocoder::geocode(.tbl = laSUB60, address = Address, method = "osm", lat = latitude, long = longitude)
+geocoded60B
+```
+
+
+```{r}
+geocoded70B <- tidygeocoder::geocode(.tbl = laSUB70, address = Address, method = "osm", lat = latitude, long = longitude)
+geocoded70B
+```
+
+
+```{r}
+geocoded80B <- tidygeocoder::geocode(.tbl = laSUB80, address = Address, method = "osm", lat = latitude, long = longitude)
+geocoded80B
+```
+
+
+```{r}
+geocoded80B <- tidygeocoder::geocode(.tbl = laSUB80, address = Address, method = "osm", lat = latitude, long = longitude)
+geocoded80B
+```
+
+```{r}
+save(geocoded40B, geocoded80B, file = "TempLAB.RData")
+```
+
+Middle 80000-rest
+
+```{r}
+laSUBRest <- la_shuf[80001:nrow(la),]
+laSUBRest
+```
+
+
+```{r}
+geocodedRestB <- tidygeocoder::geocode(.tbl = laSUBRest, address = Address, method = "osm", lat = latitude, long = longitude)
+`geocodedRestB
+```
+
+
+```{r}
+save(geocoded40B, geocoded80B, geocodedRestB ,file = "allLA.RData")
+load(file = "allLA.RData")
+
+geocoded40B
+geocoded80B
+geocodedRestB
+
+geocodedLA <- rbind(geocoded40B,geocoded80B,geocodedRestB)
+geocodedLAFound <- geocodedLA %>% filter(!is.na(latitude)) %>% filter( ((latitude > 33 & latitude < 36) & (longitude > -120 & longitude < -116)) )
+geocodedLAReDo <- geocodedLA %>% filter(is.na(latitude) | !((latitude > 33 & latitude < 36) & (longitude > -120 & longitude < -116)) )
+geocodedLAReDo
+geocodedLAFound
+```
+
+```{r}
+geocodedLAFound
+
+geocodedLAFound <- geocodedLAFound %>%
+  mutate(editArea = case_when(
+    str_detect(Area, "wilshire") ~ "wilshire",
+    TRUE ~ Area
+    )
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Subsetting to test'
 
 #First Run through with "los angeles" lost 12,000
@@ -47,7 +181,6 @@ First 40000
 ```{r}
 geocoded40 <- tidygeocoder::geocode(.tbl = laSUB40, address = Address, method = "osm", lat = latitude, long = longitude)
 geocoded40
-geocoded40 %>% filter(is.na(latitude))
 ```
 
 Middle 40000-80000
