@@ -11,38 +11,102 @@ library(tidyverse)
 library(ggmap)
 ```
 
+Loading in our data from the Rproject.
 
 ```{r}
 load(file = "NY.RData")
 ny
 ```
 
+we clean up some of the columns that contain information on the address of a row and assign each the best we can without digging too deep into the data itself.
+
+```{r}
+#Removing right adjustment
+NYData$Column.Location <- trimws(NYData$Column.Location, which = c("right"))
+#Manual Cleaning Some of the observations
+NYData$Column.Location <- sub("nj","new jersey", NYData$Column.Location)
+NYData$Column.Location <- sub("ny","new york", NYData$Column.Location)
+NYData$Column.Location <- sub("li","long island", NYData$Column.Location)
+NYData$Column.Location <- sub("-","", NYData$Column.Location)
+NYData$Column.Location <- sub("&","", NYData$Column.Location)
+NYData$Column.Location <- sub(" ","", NYData$Column.Location)
+NYData$Column.Location <- sub("#","", NYData$Column.Location)
+```
+
+We can see that only 40 rows are missing all of there location data.
 
 ```{r}
 ny$Area <- tolower(ny$Area)
 ny$Street <- tolower(ny$Street)
-ny$Street <- tolower(ny$Column.Location)
-ny$Street <- tolower(ny$Area)
-ny <- ny %>% unite(Address, c("Hse.No","Street","Area","Column.Location"), sep = " ",remove = FALSE)
-ny$Address <- paste(ny$Address, "")
-ny
+ny$Column.Location <- tolower(ny$Column.Location)
+
+ny <- ny %>% unite(Address1, c("Hse.No","Street","Column.Location"), sep = " ",remove = FALSE)
+ny <- ny %>% unite(Address2, c("Area","Column.Location"), sep = " ",remove = FALSE)
+
+ny$Address1 <- trimws(ny$Address1, which = c("right"))
+ny$Address2 <- trimws(ny$Address2, which = c("right"))
+
+ny <- ny %>% mutate(Address = ifelse(Address1 != "", as.character(Address1),  as.character(Address2)))
+ny %>% filter(Address == "")
+ny <- ny %>% select(-Address1,-Address2, -X.1, -X)
 ```
 
-Geocoding and saving the files same as before. 
+
+Explain why we do this first
+
+```{r}
+#Saying that if it follows a certain pattern it is added to the new calculated column
+
+pattern3 <- c("manhattan|westchester|newjersey|westside|eastside|queens|longisland|brooklyn|nassausuffolk|connecticut|bronx|queens& long island|newyork|westchestercounty|queenslongisland|statenisland")
+ny <- ny %>% mutate(Coarse.Geo = ifelse(
+  grepl(pattern3, Column.Location, ignore.case = TRUE), as.character(Column.Location), 1))
+```
+
+```{r}
+ny$Coarse.Geo <- tolower(ny$Column.Location)
+#More column.location cleaning here
+ny$Coarse.Geo <- trimws(ny$Coarse.Geo, which = c("right"))
+ny$Coarse.Geo <- tolower(ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("nj","new jersey", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("ny","new york", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("li","long island", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("-","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("&","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub(" ","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("county","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub(" state","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("queens long island","queens", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("queenslongisland","queens", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("queensand long island","queens", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("brooklynlongisland","brooklyn", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub(" st","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("newengland","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("manhattanbronx","manhattan", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("ville","", ny$Coarse.Geo)
+ny$Coarse.Geo <- sub("brooklynqueens","brooklyn", ny$Coarse.Geo)
+```
+
+
+Now we send the entire file through this Open Street Map API (using the package tidygeocoder) and collect the results
  
 ```{r}
 geocodedNY <- tidygeocoder::geocode(.tbl = ny, address = Address, method = "osm", lat = latitude, long = longitude)
 save(geocodedNY, file = "allNY.RData")
 ```
 
-
 ```{r}
 load(file = "allNY.RData")
-geocodedNY 
-geocodedNY$Street <- tolower(geocodedNY$Column.Location)
-geocodedNY$Street <- tolower(geocodedNY$Area)
+geocodedNY
 ```
 
+
+
+
+
+
+
+
+We can create two data sets of our results that were found and are withing a reasonable region of the city and results were not found and are well outside the city.
 
 ```{r}
 incorrectMatches <- geocodedNY %>% filter((is.na(latitude) | (latitude < 38) | (latitude > 44) | (longitude < -78) | (longitude > -71)) )
@@ -52,16 +116,26 @@ incorrectMatches <- geocodedNY %>% filter((is.na(latitude) | (latitude < 38) | (
 correctMatches <- geocodedNY %>% filter(!(is.na(latitude) | (latitude < 38) | (latitude > 44) | (longitude < -78) | (longitude > -71)) )
 ```
 
+```{r}
+correctMatches
+incorrectMatches
+```
+
+
+
+We can use the ggmap package to map the results over all New York.
 
 ```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
 register_google(key = k)
 ```
 
-
-
 ```{r}
 map <- get_map(location = 'New York', zoom = 7, maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = correctMatches, mapping = aes(x = longitude, y = latitude, color = factor(Column.Location)), size = 1) + theme(legend.position = "none")
 ```
+
+
+
+
 

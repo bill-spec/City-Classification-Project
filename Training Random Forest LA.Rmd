@@ -21,13 +21,14 @@ Reading in file.
 
 ```{r}
 load(file = "cleanLA.RData")
-LAData
+LAData 
 ```
 
-Removing areas with no information. 
+Removing areas with no information.
 
 ```{r}
-LAData <- LAData %>% filter(editArea != "") 
+LAData <- LAData %>% filter(editArea != "")
+dim(LAData)
 ```
 
 Finding the top 50 labeled areas.
@@ -35,7 +36,7 @@ Finding the top 50 labeled areas.
 ```{r}
 LAData$editArea <- tolower(LAData$editArea)
 tbl <- LAData %>% group_by(editArea) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreasLA <- tbl[1:50,]$editArea
+listOfAreasLA <- tbl[1:49,]$editArea
 listOfAreasLA
 save(listOfAreasLA, file = "AreasLA.RData")
 ```
@@ -45,6 +46,7 @@ Find the observations with a top 50 area.
 ```{r}
 LADataAddress <- LAData %>% filter(editArea %in% listOfAreasLA) 
 LADataAddress$editArea <- as.factor(LADataAddress$editArea)
+dim(LADataAddress)
 ```
 
 This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
@@ -57,7 +59,6 @@ modelData <- modelData[shuf,]
 train <- sample(nrow(modelData)*.9)
 LATrain <- modelData[train,]
 LaTest <- modelData[-train,]
-
 ```
 
 
@@ -94,7 +95,7 @@ Full Model
 Using all the available data we construct a full model to use for the rest of the analysis. 
 
 ```{r}
-fullModel <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.type + capitalizedPrice, data = firstGeocodeFile, ntree = 1000, mtry = 2, importance = TRUE)
+fullModel <- randomForest(editArea ~ latitude + longitude + capitalizedPrice, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
 ```
 
 ```{r}
@@ -128,58 +129,4 @@ importance(fullModel, type = 1)
 
 
 
-
-
-
-The next lines of code investigate how well this model performs on the 8871 observations that don't have a house number. 
-
-First we can re-clean the data from earlier to get the 8,871 observations without a good house number.
-
-```{r}
-load("cleanBoston.RData")
-```
-
-```{r}
-bostonData <- bostonData %>% filter(Area != "")
-```
-
-```{r}
-bostonData$Area <- tolower(bostonData$Area)
-bostonData <- bostonData %>% filter(Area %in% listOfAreas)
-bostonAddress <- bostonData %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
-bostonAddress$Address <- paste(bostonAddress$Address, " , MA")
-```
-
-```{r}
-bostonAddress <- bostonAddress %>% filter(Area != "") %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No == "")
-```
-
-Cleaning the data same as before.
-
-```{r}
-geocodeFileNoHse <- geocodeFileNoHse %>% filter(!is.na(latitude))
-geocodeFileNoHse$Area <- as.factor(geocodeFileNoHse$Area)
-
-geocodeFileNoHse <- geocodeFileNoHse %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
-
-```
-
-
-Predict the data from the previous model and get another misclassification rate. 
-
-```{r}
-yhat.rf <- predict(fullModel, newdata = geocodeFileNoHse)
-predicted <- cbind(yhat.rf, geocodeFileNoHse)
-predicted
-
-misclassNoHse <- mean(yhat.rf != geocodeFileNoHse$Area)
-misclassNoHse
-```
-
-Mapping the predicted results. 
-
-```{r}
-map <- get_map(location = 'Boston', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)
-```
 

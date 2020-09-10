@@ -16,28 +16,25 @@ library(ggmap)
 Next we can take the 37,506 observations that aren't inside the top 50 regions, predict the most likely region to classify them in, and investigate if the results seem correct.
 
 ```{r}
-load("cleanBoston.RData")
+load(file = "cleanLA.RData")
+LAData 
 ```
 
 ```{r}
-bostonAddress <- bostonData %>% filter(!(Area %in% listOfAreas))
-```
-
-```{r}
-geocodeFileClassify <- bostonAddress %>% filter(!is.na(latitude))
+LAAddress <- LAData %>% filter(!(Area %in% listOfAreasLA))
 ```
 
 Predict the data using the previous model and map the results for validation. 
 
 ```{r}
-yhat.rf <- predict(fullModel, newdata = geocodeFileClassify)
-predicted <- cbind(yhat.rf, geocodeFileClassify)
+yhat.rf <- predict(fullModel, newdata = LAAddress)
+predicted <- cbind(yhat.rf, LAAddress)
 predicted
 ```
 
 
 ```{r}
-map <- get_map(location = 'Boston', zoom =8 , maptype = "terrain-background", source = 'google', color = 'color')
+map <- get_map(location = 'Los Angeles', zoom = 8 , maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)+ theme(legend.position = "none")
 ```
 

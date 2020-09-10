@@ -38,8 +38,8 @@ capitalizeRent <- function(dataFrame){
 Cleaning the Dataset. Pulling in an already Geocoded Dataset.
 
 ```{r}
-#load(file = "allLA.RData")
-geocodedLA
+load(file = "allLAFound.RData")
+geocodedLA <- geocodedLAFound
 ```
 
 Capitalize the Rent
@@ -47,7 +47,7 @@ Capitalize the Rent
 ```{r}
 LAData <- capitalizeRent(geocodedLA)
 LAData <- LAData %>% filter(!is.na(capitalizedPrice))
-LAData
+LAData 
 ```
 
 Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 

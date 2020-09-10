@@ -31,223 +31,101 @@ la$Address <- sapply(la$Address, function(x) gsub("near", "", x))
 ```
 
 
+
 Just doing it all at once
 
 ```{r}
-la
 geocodedAllAttemtpt <- tidygeocoder::geocode(.tbl = la, address = Address, method = "osm", lat = latitude, long = longitude)
 geocodedAllAttemtpt
-```
-
-
-Subsetting to test with Los Angeles California
-
-#First Run through with "los angeles" lost 12,000
-
-```{r}
-#shuf <- sample(1:nrow(la))
-#la_shuf <- la[shuf,]
-la_shuf <- la
-laSUB40 <- la_shuf[1:40001,]
-laSUB40
-```
-
-First 40000
-
-```{r}
-geocoded40B <- tidygeocoder::geocode(.tbl = laSUB40, address = Address, method = "osm", lat = latitude, long = longitude)
+save(geocodedAllAttemtpt, file = "allLA.RData")
 ```
 
 
 
 ```{r}
-save(geocoded40B, file = "TempLAB40.RData")
-load(file = "TempLAB40.RData")
-```
-
-
-
-Middle 40000-80000
-
-```{r}
-laSUB50 <- la_shuf[40002:50000,]
-laSUB60 <- la_shuf[50001:60000,]
-laSUB70 <- la_shuf[60001:70000,]
-laSUB80 <- la_shuf[70001:80000,]
-```
-
-
-```{r}
-geocoded50B <- tidygeocoder::geocode(.tbl = laSUB50, address = Address, method = "osm", lat = latitude, long = longitude)
-geocoded50B
-```
-
-
-```{r}
-geocoded60B <- tidygeocoder::geocode(.tbl = laSUB60, address = Address, method = "osm", lat = latitude, long = longitude)
-geocoded60B
-```
-
-
-```{r}
-geocoded70B <- tidygeocoder::geocode(.tbl = laSUB70, address = Address, method = "osm", lat = latitude, long = longitude)
-geocoded70B
-```
-
-
-```{r}
-geocoded80B <- tidygeocoder::geocode(.tbl = laSUB80, address = Address, method = "osm", lat = latitude, long = longitude)
-geocoded80B
-```
-
-
-```{r}
-geocoded80B <- tidygeocoder::geocode(.tbl = laSUB80, address = Address, method = "osm", lat = latitude, long = longitude)
-geocoded80B
-```
-
-```{r}
-save(geocoded40B, geocoded80B, file = "TempLAB.RData")
-```
-
-Middle 80000-rest
-
-```{r}
-laSUBRest <- la_shuf[80001:nrow(la),]
-laSUBRest
-```
-
-
-```{r}
-geocodedRestB <- tidygeocoder::geocode(.tbl = laSUBRest, address = Address, method = "osm", lat = latitude, long = longitude)
-`geocodedRestB
-```
-
-
-```{r}
-save(geocoded40B, geocoded80B, geocodedRestB ,file = "allLA.RData")
 load(file = "allLA.RData")
+geocodedAllAttemtpt %>% filter(is.na(latitude))
+```
 
-geocoded40B
-geocoded80B
-geocodedRestB
 
-geocodedLA <- rbind(geocoded40B,geocoded80B,geocodedRestB)
+```{r}
+geocodedLA = geocodedAllAttemtpt
 geocodedLAFound <- geocodedLA %>% filter(!is.na(latitude)) %>% filter( ((latitude > 33 & latitude < 36) & (longitude > -120 & longitude < -116)) )
 geocodedLAReDo <- geocodedLA %>% filter(is.na(latitude) | !((latitude > 33 & latitude < 36) & (longitude > -120 & longitude < -116)) )
 geocodedLAReDo
 geocodedLAFound
 ```
 
-```{r}
-geocodedLAFound
 
+```{r}
 geocodedLAFound <- geocodedLAFound %>%
   mutate(editArea = case_when(
     str_detect(Area, "wilshire") ~ "wilshire",
+    str_detect(Area, "hollywood") ~ "hollywood",
     TRUE ~ Area
     )
   )
+
+save(geocodedLAFound,file = "allLAFound.RData")
 ```
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-Subsetting to test'
-
-#First Run through with "los angeles" lost 12,000
+Take the redo ones and send them through again but with a general tag and not california.
 
 ```{r}
-#shuf <- sample(1:nrow(la))
-#la_shuf <- la[shuf,]
-la_shuf <- la
-laSUB40 <- la_shuf[1:10,]
-laSUB40
-```
-
-First 40000
-
-```{r}
-geocoded40 <- tidygeocoder::geocode(.tbl = laSUB40, address = Address, method = "osm", lat = latitude, long = longitude)
-geocoded40
-```
-
-Middle 40000-80000
-
-```{r}
-laSUB80 <- la_shuf[40001:80000,]
-laSUB80
-```
-
-```{r}
-geocoded80 <- tidygeocoder::geocode(.tbl = laSUB80, address = Address, method = "osm", lat = latitude, long = longitude)
-geocoded80
-```
-
-```{r}
-save(geocoded40, geocoded80, file = "TempLA.RData")
-```
-
-Middle 80000-rest
-
-```{r}
-laSUBRest <- la_shuf[80001:nrow(la),]
-laSUBRest
+geocodedLAReDo <- geocodedLAReDo %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
+geocodedLAReDo$Address <- paste(geocodedLAReDo$Address, ", CA")
+geocodedLAReDo
 ```
 
 
 ```{r}
-geocodedRest <- tidygeocoder::geocode(.tbl = laSUBRest, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodedRest
+geocodedAllCali25 <- tidygeocoder::geocode(.tbl = geocodedLAReDo[1:25000,], address = Address, method = "osm", lat = latitude, long = longitude)
+geocodedAllCali25 %>% filter((latitude) != latitude1)
+save(geocodedAllCali25, file = "allLARedoneLA25.RData")
 ```
 
-
 ```{r}
-save(geocoded40, geocoded80, geocodedRest ,file = "allLA.RData")
-load(file = "allLA.RData")
+load(file = "allLARedoneLA25.RData")
+geocodedAllCali25
 
-geocoded40
-geocoded80
-geocodedRest
-
-geocodedLA <- rbind(geocoded40,geocoded80,geocodedRest)
-geocodedLAFound <- geocodedLA %>% filter(!is.na(latitude)) %>% filter( ((latitude > 33 & latitude < 36) & (longitude > -120 & longitude < -116)) )
-geocodedLAReDo <- geocodedLA %>% filter(is.na(latitude) | !((latitude > 33 & latitude < 36) & (longitude > -120 & longitude < -116)) )
+geocodedLA = geocodedAllCali25
+geocodedLAFound <- geocodedLA %>% filter(!is.na(latitude1)) %>% filter( ((latitude1 > 33 & latitude1 < 36) & (longitude1 > -120 & longitude1 < -116)) )
+geocodedLAReDo <- geocodedLA %>% filter(is.na(latitude1) | !((latitude1 > 33 & latitude1 < 36) & (longitude1 > -120 & longitude1 < -116)) )
 geocodedLAReDo
 geocodedLAFound
 ```
 
 ```{r}
-geocodedLAFound
-
-geocodedLAFound <- geocodedLAFound %>%
-  mutate(editArea = case_when(
-    str_detect(Area, "wilshire") ~ "wilshire",
-    TRUE ~ Area
-    )
-  )
+geocodedAllCali50 <- tidygeocoder::geocode(.tbl = geocodedLAReDo[25001:nrow(geocodedAllCali50),], address = Address, method = "osm", lat = latitude, long = longitude)
+geocodedAllCali50 %>% filter((latitude) != latitude1)
+save(geocodedAllCali50, file = "allLARedoneLA50.RData")
 ```
 
 
 
 ```{r}
-geocodedLA <- geocodedLAFound %>% select(Year,Month,Date,Price.type,Total.rooms,Column,editArea,Hse.No,Street,Cross.Street,Address,Type,Frequency,Sale.price,Price.type,Rent.price,latitude,longitude)
+load(file = "allLARedoneLA25.RData")
+
+row <- c(1:50611) 
+temp <- cbind(geocodedLAReDo, row)
+temp
+temp %>% filter(Address == "7809 kelvin canoga park , CA")
 ```
 
-```{r}
-geocodedLA
-```
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -259,7 +137,11 @@ register_google(key = k)
 
 
 ```{r}
-data <- geocodedLA 
+geocodedLAFound
+data
+save(data, file = "what.RData")
+load(file = "what.RData")
+data %>% inner_join(geocodedLAFound, by = c("Street" = "Street", "Hse.No" = "Hse.No", "Year" = "Year", "Date"= "Date", "Column" = "Column", "Month"= "Month","Price.type"= "Price.type","Total.rooms"="Total.rooms", "Type"="Type","Cross.Street"= "Cross.Street", "editArea"="editArea"), na_matches="never")
 ```
 
 

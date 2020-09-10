@@ -35,14 +35,14 @@ capitalizeRent <- function(dataFrame){
 }
 ```
 
-Cleaning the Dataset. Pulling in an already Geocoded Dataset.
+Cleaning the Dataset. Pulling in an already Geocoded Dataset from the 'All Geocoded' File.
 
 ```{r}
 load(file = "allNY.RData")
 geocodedNY
 ```
 
-Capitalize the Rent
+We capitalzie the rent and price and standardize it based on the equation above.
 
 ```{r}
 correctMatches
@@ -69,6 +69,8 @@ NYData$Type <- as.factor(NYData$Type)
 NYData$Column <- tolower(NYData$Column)
 NYData$Totalrooms <- as.integer(NYData$Totalrooms)
 ```
+
+We save this file to move onto the 'Training Random Forest' File.
 
 ```{r}
 save(NYData, file = "cleanNY.RData")

@@ -23,60 +23,12 @@ load(file = "cleanNY.RData")
 NYData
 ```
 
-Removing areas with no information and cleaning data to deal with typos.
+
+
+
+We can grab the top 12 by frequency from our coarse geography information. 
 
 ```{r}
-NYData <- NYData %>% filter(Column.Location != "") 
-
-#Removing right adjustment
-NYData$Column.Location <- trimws(NYData$Column.Location, which = c("right"))
-#Manual Cleaning 
-NYData$Column.Location <- sub("nj","new jersey", NYData$Column.Location)
-NYData$Column.Location <- sub("ny","new york", NYData$Column.Location)
-NYData$Column.Location <- sub("li","long island", NYData$Column.Location)
-NYData$Column.Location <- sub("-","", NYData$Column.Location)
-NYData$Column.Location <- sub("&","", NYData$Column.Location)
-NYData$Column.Location <- sub(" ","", NYData$Column.Location)
-
-```
-
-
-
-
-```{r}
-#Saying that if it follows a certain pattern it is added to the new calculated column
-
-pattern3 <- c("manhattan|westchester|newjersey|westside|eastside|queens|longisland|brooklyn|nassausuffolk|connecticut|bronx|queens& long island|newyork|westchestercounty|queenslongisland|statenisland")
-newYorkExport <- newYork1 %>% mutate(Coarse.Geo = ifelse(
-  grepl(pattern3, Column.Location, ignore.case = TRUE), as.character(Column.Location), 1))
-```
-
-
-
-```{r}
-NYData$Column.Location <- tolower(NYData$Column.Location)
-
-#More column.location cleaning here
-ny$Coarse.Geo <- trimws(ny$Coarse.Geo, which = c("right"))
-ny$Coarse.Geo <- tolower(ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("nj","new jersey", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("ny","new york", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("li","long island", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("-","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("&","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub(" ","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("county","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub(" state","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("queens long island","queens", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("queenslongisland","queens", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("queensand long island","queens", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("brooklynlongisland","brooklyn", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub(" st","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("newengland","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("manhattanbronx","manhattan", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("ville","", ny$Coarse.Geo)
-ny$Coarse.Geo <- sub("brooklynqueens","brooklyn", ny$Coarse.Geo)
-
 tbl <- NYData %>% group_by(Coarse.Geo) %>% summarise(count = n()) %>% arrange(desc(count))
 listOfAreasNY <- tbl[1:12,]$Coarse.Geo
 listOfAreasNY
@@ -84,20 +36,28 @@ listOfAreasNY
 save(listOfAreasNY, file = "NYAreas.RData")
 ```
 
-Find the observations with a top 50 area. 
+
+
+
+
+Find the observations with an area inside of the listOfAreas list. 
 
 ```{r}
 NYData <- NYData %>% filter(Coarse.Geo %in% listOfAreasNY) 
 ```
 
 ```{r}
-NYData <- NYData %>% filter(!is.na(latitude))
 NYData$Coarse.Geo <- as.factor(NYData$Coarse.Geo)
 ```
 
-Model Building on the first batch
 
-This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
+
+
+
+
+
+
+We can now build and test a model based on the data that we know to be true (data that was contained in the listOfAreas list).
  
 ```{r}
 NYData
@@ -110,10 +70,9 @@ dataTrain <- modelData[train,]
 dataTest <- modelData[-train,]
 ```
 
-
 ```{r}
-bag <- randomForest(Coarse.Geo ~ latitude + longitude + Year + capitalizedPrice, data = dataTrain, ntree = 1000, importance = TRUE)
-yhat.rf <- predict(bag, newdata = dataTest)
+randomForestModel <- randomForest(Coarse.Geo ~ latitude + longitude + Year + capitalizedPrice, data = dataTrain, ntree = 1000, importance = TRUE)
+yhat.rf <- predict(randomForestModel, newdata = dataTest)
 misclassRate <- mean(yhat.rf != dataTest$Coarse.Geo)
 misclassRate
 ```
@@ -123,7 +82,10 @@ predicted <- cbind(yhat.rf, dataTest)
 predicted
 ```
 
-We can then map the results using the ggmaps package below to manuely search for any errors.
+
+
+
+We can map the results using the ggmaps package below to manually search for any obvious errors. 
 
 ```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
@@ -133,7 +95,7 @@ register_google(key = k)
 ```{r}
 map <- get_map(location = 'New York', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
 
-ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1)
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Coarse.Geo)), size = 1)
 
 ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Column.Location)), size = 1) +
   theme(legend.position = "none")
@@ -141,12 +103,13 @@ ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latit
 ```
 
 
-Full Model
 
-Using all the available data we construct a full model to use for the rest of the analysis. 
+
+
+Using all the available data we have we construct a full model to use for the classification of the points that we don't know the location of.
 
 ```{r}
-fullModel <- randomForest(Column.Location ~ latitude + longitude + Year + capitalizedPrice, data = NYData, ntree = 500, mtry = 2, importance = TRUE)
+fullModel <- randomForest(Coarse.Geo ~ latitude + longitude + Year + capitalizedPrice, data = NYData, ntree = 500, mtry = 2, importance = TRUE)
 ```
 
 
