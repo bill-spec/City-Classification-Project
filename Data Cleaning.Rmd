@@ -72,12 +72,4 @@ save(bostonData, file = "cleanBoston.RData")
 ```
 
 
-Export 
-
-```{r}
-knn <- bostonData %>% mutate(type = ifelse(Price.type == "sale", 1,0)) %>% select(Area, latitude, longitude, capitalizedPrice, Total.rooms, Year, type)
-knn
-write.csv(knn, file = "C:/Users/the36/Desktop/KNN.csv")
-```
-
 

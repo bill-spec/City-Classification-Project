@@ -31,7 +31,7 @@ Predict the data using the previous model and map the results for validation.
 
 ```{r}
 yhat.rf <- predict(fullModel, newdata = NYAddresses)
-predicted <- cbind(yhat.rf, NYAddresses)
+predicted <- cbind(NYAddresses,yhat.rf)
 predicted
 ```
 

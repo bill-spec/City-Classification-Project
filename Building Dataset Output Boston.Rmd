@@ -1,0 +1,51 @@
+---
+title: "Building Dataset Output Boston"
+author: "Bill Lang"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+Load in the files that already had a top 50 area. 
+
+```{r}
+load(file = "bostonTop50.RData")
+bostonAddressTop50
+bostonExport <- bostonAddressTop50 %>% mutate(calculatedColumn = Area)
+```
+
+Load in the files that have been calculated by the full model
+
+```{r}
+load(file = "predicctedBoston.RData")
+bostonExport <- rbind(bostonExport, predicted)
+bostonExport
+```
+
+Load in the files that were not geocoded well and did not have an area
+
+```{r}
+load(file = "cleanBoston.RData")
+bostonData <- bostonData %>% filter(is.na(latitude))
+calculatedColumn <- rep("",nrow(bostonData))
+bostonData <- cbind(bostonData, calculatedColumn)
+bostonData
+```
+
+Combine the last of the rows togehter.
+
+```{r}
+bostonExport <- rbind(bostonExport, bostonData)
+bostonExport
+```
+
+```{r}
+save(bostonExport, file = "bostonExport.RData")
+```
+
+

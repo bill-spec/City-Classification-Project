@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggmap)
+library(tidygeocoder)
 ```
 
 Loading in our data from the Rproject.
@@ -22,15 +23,15 @@ we clean up some of the columns that contain information on the address of a row
 
 ```{r}
 #Removing right adjustment
-NYData$Column.Location <- trimws(NYData$Column.Location, which = c("right"))
+ny$Column.Location <- trimws(ny$Column.Location, which = c("right"))
 #Manual Cleaning Some of the observations
-NYData$Column.Location <- sub("nj","new jersey", NYData$Column.Location)
-NYData$Column.Location <- sub("ny","new york", NYData$Column.Location)
-NYData$Column.Location <- sub("li","long island", NYData$Column.Location)
-NYData$Column.Location <- sub("-","", NYData$Column.Location)
-NYData$Column.Location <- sub("&","", NYData$Column.Location)
-NYData$Column.Location <- sub(" ","", NYData$Column.Location)
-NYData$Column.Location <- sub("#","", NYData$Column.Location)
+ny$Column.Location <- sub("nj","new jersey", ny$Column.Location)
+ny$Column.Location <- sub("ny","new york", ny$Column.Location)
+ny$Column.Location <- sub("li","long island", ny$Column.Location)
+ny$Column.Location <- sub("-","", ny$Column.Location)
+ny$Column.Location <- sub("&","", ny$Column.Location)
+ny$Column.Location <- sub(" ","", ny$Column.Location)
+ny$Column.Location <- sub("#","", ny$Column.Location)
 ```
 
 We can see that only 40 rows are missing all of there location data.
@@ -52,15 +53,8 @@ ny <- ny %>% select(-Address1,-Address2, -X.1, -X)
 ```
 
 
-Explain why we do this first
 
-```{r}
-#Saying that if it follows a certain pattern it is added to the new calculated column
-
-pattern3 <- c("manhattan|westchester|newjersey|westside|eastside|queens|longisland|brooklyn|nassausuffolk|connecticut|bronx|queens& long island|newyork|westchestercounty|queenslongisland|statenisland")
-ny <- ny %>% mutate(Coarse.Geo = ifelse(
-  grepl(pattern3, Column.Location, ignore.case = TRUE), as.character(Column.Location), 1))
-```
+We can clean the Coarse.geo column as we create it.
 
 ```{r}
 ny$Coarse.Geo <- tolower(ny$Column.Location)
@@ -86,6 +80,16 @@ ny$Coarse.Geo <- sub("ville","", ny$Coarse.Geo)
 ny$Coarse.Geo <- sub("brooklynqueens","brooklyn", ny$Coarse.Geo)
 ```
 
+Coarse.geo is the calculated column, we can create that manually with the new york data first with the following pattern.
+
+```{r}
+#Saying that if it follows a certain pattern it is added to the new calculated column
+
+pattern3 <- c("manhattan|westchester|newjersey|westside|eastside|queens|longisland|brooklyn|nassausuffolk|connecticut|bronx|queens& long island|newyork|westchestercounty|queenslongisland|statenisland")
+ny <- ny %>% mutate(Coarse.Geo = ifelse(
+  grepl(pattern3, Column.Location, ignore.case = TRUE), as.character(Column.Location), 1))
+```
+
 
 Now we send the entire file through this Open Street Map API (using the package tidygeocoder) and collect the results
  
@@ -98,10 +102,6 @@ save(geocodedNY, file = "allNY.RData")
 load(file = "allNY.RData")
 geocodedNY
 ```
-
-
-
-
 
 
 
@@ -120,6 +120,8 @@ correctMatches <- geocodedNY %>% filter(!(is.na(latitude) | (latitude < 38) | (l
 correctMatches
 incorrectMatches
 ```
+
+
 
 
 

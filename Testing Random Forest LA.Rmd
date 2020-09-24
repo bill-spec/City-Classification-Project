@@ -24,7 +24,7 @@ LAData
 LAAddress <- LAData %>% filter(!(Area %in% listOfAreasLA))
 ```
 
-Predict the data using the previous model and map the results for validation. 
+Predict the data using the previous model and map the results for validation.
 
 ```{r}
 yhat.rf <- predict(fullModel, newdata = LAAddress)

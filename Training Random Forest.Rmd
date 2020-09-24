@@ -42,22 +42,27 @@ save(listOfAreas, file = "Areas.RData")
 Find the observations with a top 50 area. 
 
 ```{r}
-bostonAddress <- bostonData %>% filter(Area %in% listOfAreas) 
+bostonAddress <- bostonData %>% filter(Area %in% listOfAreas)
+
+#saving this file for the export dataset
+bostonAddressTop50 <- bostonAddress
+save(bostonAddressTop50, file = "bostonTop50.RData")
 ```
 
 Finding the 15,713 observations with full addresses.
 
 ```{r}
 bostonAddress <- bostonAddress %>% filter((Street != "") | (Cross.Street != "")) %>% filter(Hse.No != "")
+bostonAddress
 ```
 
 Filtering outliers in the geocoding process. These results were so far outside of Boston they are being treated as failed geocoding result and not considered.
 
 ```{r}
-firstGeocodeFile$Area <- as.factor(firstGeocodeFile$Area)
-
-firstGeocodeFile <- firstGeocodeFile %>% filter(!is.na(latitude))
+bostonAddress$Area <- as.factor(bostonAddress$Area)
+bostonAddress <- bostonAddress %>% filter(!is.na(latitude))
 #firstGeocodeFile <- firstGeocodeFile %>% filter(latitude < 43) %>% filter(latitude > 42) %>% filter(longitude > -71.75)
+bostonAddress
 ```
 
 Model Building on the first 15,000
@@ -80,13 +85,10 @@ bag <- randomForest(Area ~ latitude + longitude + Year + Total.rooms + Price.typ
 yhat.rf <- predict(bag, newdata = bostonTest)
 misclassRate <- mean(yhat.rf != bostonTest$Area)
 misclassRate
-
-importance(bag, class = 1)
-importance(bag, type = 2)
 ```
 
 ```{r}
-predicted <- cbind(yhat.rf, bostonTest)
+predicted <- cbind(bostonTest,yhat.rf)
 predicted
 ```
 

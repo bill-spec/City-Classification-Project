@@ -47,6 +47,7 @@ Find the observations with a top 50 area.
 LADataAddress <- LAData %>% filter(editArea %in% listOfAreasLA) 
 LADataAddress$editArea <- as.factor(LADataAddress$editArea)
 dim(LADataAddress)
+hist(LADataAddress$Year)
 ```
 
 This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 

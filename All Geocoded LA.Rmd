@@ -14,7 +14,7 @@ library(ggmap)
 
 ```{r}
 load(file = "LA.RData")
-la
+la %>% filter(Area != "")
 ```
 
 
@@ -54,6 +54,14 @@ geocodedLAFound <- geocodedLA %>% filter(!is.na(latitude)) %>% filter( ((latitud
 geocodedLAReDo <- geocodedLA %>% filter(is.na(latitude) | !((latitude > 33 & latitude < 36) & (longitude > -120 & longitude < -116)) )
 geocodedLAReDo
 geocodedLAFound
+```
+
+```{r}
+
+hist(la$Year)
+hist(geocodedLAReDo$Year)
+geocodedLAFound %>% filter(Year < 1930) %>% filter(!is.na(latitude))
+
 ```
 
 
@@ -147,6 +155,6 @@ data %>% inner_join(geocodedLAFound, by = c("Street" = "Street", "Hse.No" = "Hse
 
 ```{r} 
 map <- get_map(location = 'Los Angeles', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = data, mapping = aes(x = longitude, y = latitude, color = factor(editArea)), size = 0.1) + theme(legend.position = "none")
+ggmap(map) + geom_point(data = geocodedLAFound, mapping = aes(x = longitude, y = latitude, color = factor(editArea)), size = 0.1) + theme(legend.position = "none")
 ```
 

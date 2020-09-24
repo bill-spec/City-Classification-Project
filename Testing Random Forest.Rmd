@@ -17,22 +17,29 @@ Next we can take the 37,506 observations that aren't inside the top 50 regions, 
 
 ```{r}
 load("cleanBoston.RData")
+bostonData
 ```
 
 ```{r}
 bostonAddress <- bostonData %>% filter(!(Area %in% listOfAreas))
+bostonAddress 
 ```
 
 ```{r}
 geocodeFileClassify <- bostonAddress %>% filter(!is.na(latitude))
+geocodeFileClassify
 ```
 
 Predict the data using the previous model and map the results for validation. 
 
 ```{r}
 yhat.rf <- predict(fullModel, newdata = geocodeFileClassify)
-predicted <- cbind(yhat.rf, geocodeFileClassify)
+predicted <- cbind(geocodeFileClassify,yhat.rf)
+predicted <- predicted %>% mutate(calculatedColumn = yhat.rf) %>% select(-yhat.rf)
 predicted
+
+#Saving for the predicted file
+save(predicted, file = "predicctedBoston.RData")
 ```
 
 

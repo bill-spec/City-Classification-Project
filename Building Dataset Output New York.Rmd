@@ -1,0 +1,62 @@
+---
+title: "Building Dataset Output New York"
+author: "Bill Lang"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggmap)
+```
+
+Origional dataset
+
+```{r}
+load(file = "NY.RData")
+ny
+```
+
+87000~ that we have geoinformation for
+
+```{r}
+load(file = "cleanNY.RData")
+load(file = "NYAreas.RData")
+NYDataExport <- NYData %>% filter(Coarse.Geo %in% listOfAreasNY)
+
+#predicted file from the Testing Random Forest New York Set
+#Making sure that the column names line up for the rbind function
+predicted <- predicted %>% mutate(Column = yhat.rf) %>% select(-yhat.rf)
+NYDataExport <- rbind(NYDataExport,predicted)
+NYDataExport
+```
+
+Of the ones that the geocoder didn't find well, they can be classified manually with the availablilty of the data in the NY dataset
+
+```{r}
+incorrectMatches <- capitalizeRent(incorrectMatches)
+incorrectMatches <- incorrectMatches %>% mutate(Column = Coarse.Geo)
+
+pattern3 <- c("manhattan|westchester|newjersey|westside|eastside|queens|longisland|brooklyn|nassausuffolk|connecticut|bronx|queens& long island|newyork|westchestercounty|queenslongisland|statenisland")
+incorrectMatches <- incorrectMatches %>% mutate(Coarse.Geo = ifelse(
+  grepl(pattern3, Coarse.Geo, ignore.case = TRUE), as.character(Coarse.Geo), ""))
+
+#sending section --> manhattan
+incorrectMatches <- incorrectMatches %>%
+  mutate(Coarse.Geo = case_when(
+    str_detect(Coarse.Geo, "eastside") ~ "manhattan",
+    str_detect(Coarse.Geo, "manhattanand bronx") ~ "manhattan",
+    TRUE ~ Coarse.Geo
+    )
+  )
+
+```
+
+Now we add these rows to the export file
+
+```{r}
+NYDataExport <- rbind(NYDataExport, incorrectMatches)
+NYDataExport %>% group_by(Coarse.Geo) %>% summarise(count = n()) %>% arrange(desc(count))
+```
+

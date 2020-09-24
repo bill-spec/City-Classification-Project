@@ -14,9 +14,7 @@ library(randomForest)
 ```
 
 
-This first half will construct a random forest model on the 15,713 observations that have a full address and an area specification in the top 50.
-
-Reading in file.
+Reading in cleaned data file.
 
 ```{r}
 load(file = "cleanNY.RData")
@@ -31,9 +29,11 @@ We can grab the top 12 by frequency from our coarse geography information.
 ```{r}
 tbl <- NYData %>% group_by(Coarse.Geo) %>% summarise(count = n()) %>% arrange(desc(count))
 listOfAreasNY <- tbl[1:12,]$Coarse.Geo
-listOfAreasNY
+
+listOfAreasNY <- listOfAreasNY[listOfAreasNY != "newyork"]
 
 save(listOfAreasNY, file = "NYAreas.RData")
+load(file = "NYAreas.RData")
 ```
 
 
