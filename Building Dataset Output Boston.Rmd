@@ -48,4 +48,10 @@ bostonExport
 save(bostonExport, file = "bostonExport.RData")
 ```
 
+Export by putting in your file path
+
+```{r}
+write.csv(bostonExport, file = "C:/Users/the36/Desktop/DataRA/RExports/bostonExport.csv")
+```
+
 

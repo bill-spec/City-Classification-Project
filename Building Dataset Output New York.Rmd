@@ -18,16 +18,19 @@ load(file = "NY.RData")
 ny
 ```
 
-87000~ that we have geoinformation for
+87000~ that we have geoinformation for from the data itself
 
 ```{r}
 load(file = "cleanNY.RData")
 load(file = "NYAreas.RData")
+load(file = "predictedNY.RData")
 NYDataExport <- NYData %>% filter(Coarse.Geo %in% listOfAreasNY)
-
+NYDataExport <- NYDataExport %>% mutate(calculatedColumn = Column) %>% select(-Column)
 #predicted file from the Testing Random Forest New York Set
 #Making sure that the column names line up for the rbind function
-predicted <- predicted %>% mutate(Column = yhat.rf) %>% select(-yhat.rf)
+
+predicted
+predicted <- predicted %>% mutate(calculatedColumn = yhat.rf) %>% select(-yhat.rf) %>% select(-Column)
 NYDataExport <- rbind(NYDataExport,predicted)
 NYDataExport
 ```
@@ -36,7 +39,6 @@ Of the ones that the geocoder didn't find well, they can be classified manually 
 
 ```{r}
 incorrectMatches <- capitalizeRent(incorrectMatches)
-incorrectMatches <- incorrectMatches %>% mutate(Column = Coarse.Geo)
 
 pattern3 <- c("manhattan|westchester|newjersey|westside|eastside|queens|longisland|brooklyn|nassausuffolk|connecticut|bronx|queens& long island|newyork|westchestercounty|queenslongisland|statenisland")
 incorrectMatches <- incorrectMatches %>% mutate(Coarse.Geo = ifelse(
@@ -50,13 +52,21 @@ incorrectMatches <- incorrectMatches %>%
     TRUE ~ Coarse.Geo
     )
   )
-
+incorrectMatches <- incorrectMatches %>% mutate(calculatedColumn = Coarse.Geo)
 ```
 
 Now we add these rows to the export file
 
 ```{r}
+NYDataExport
+incorrectMatches
+
 NYDataExport <- rbind(NYDataExport, incorrectMatches)
-NYDataExport %>% group_by(Coarse.Geo) %>% summarise(count = n()) %>% arrange(desc(count))
+NYDataExport
+```
+
+
+```{r}
+write.csv(NYDataExport, file = "C:/Users/the36/Desktop/DataRA/RExports/nyExport.csv")
 ```
 

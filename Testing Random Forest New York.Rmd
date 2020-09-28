@@ -21,7 +21,6 @@ load("cleanNY.RData")
 
 ```{r}
 load(file = "NYAreas.RData")
-correctMatches
 listOfAreasNY
 NYAddresses <- NYData %>% filter(!(Coarse.Geo %in% listOfAreasNY))
 NYAddresses
@@ -33,6 +32,7 @@ Predict the data using the previous model and map the results for validation.
 yhat.rf <- predict(fullModel, newdata = NYAddresses)
 predicted <- cbind(NYAddresses,yhat.rf)
 predicted
+save(predicted, file = "predictedNY.RData")
 ```
 
 
