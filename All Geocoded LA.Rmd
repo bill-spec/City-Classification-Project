@@ -15,6 +15,8 @@ library(ggmap)
 ```{r}
 load(file = "LA.RData")
 la %>% filter(Area != "")
+la %>% group_by(Column) %>% summarise(count = n()) %>% arrange(desc(count))
+la %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
 ```
 
 
@@ -29,8 +31,6 @@ la$Address <- trimws(la$Address)
 la$Address <- sapply(la$Address, function(x) gsub("#", "", x))
 la$Address <- sapply(la$Address, function(x) gsub("near", "", x))
 ```
-
-
 
 Just doing it all at once
 
@@ -81,7 +81,7 @@ save(geocodedLAFound,file = "allLAFound.RData")
 
 
 
-Take the redo ones and send them through again but with a general tag and not california.
+Take the redo ones and send them through again but with a general tag and not Lost Angeles California.
 
 ```{r}
 geocodedLAReDo <- geocodedLAReDo %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
