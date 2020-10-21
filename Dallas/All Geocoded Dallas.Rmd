@@ -1,0 +1,126 @@
+---
+title: "All Geocoded Dallas"
+author: "Bill Lang"
+date: "10/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggmap)
+```
+
+```{r}
+load(file = "Dallas.RData")
+dallas
+
+dallas %>% filter(Area != "")
+dallas %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
+dallas %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+
+#35000 with and 65459 without area, Column.Loation has just Dallas
+```
+
+
+Dataset Specific preparation
+
+```{r}
+dallas$Area <- tolower(dallas$Area)
+dallas$Column.Location <- tolower(dallas$Column.Location)
+dallas$Street <- tolower(dallas$Street)
+
+
+dallas <- dallas %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column.Location))) %>%   mutate(location = case_when(
+    str_detect(location, "n dallas") ~ "north dallas",
+    str_detect(location, "e dallas") ~ "east dallas",
+    str_detect(location, "dallas") ~ "",
+    str_detect(location, "suburban") ~ "", 
+    TRUE ~ location
+    )
+  )
+dallas %>% filter(location != "")
+#52371 not blank area
+
+dallas <- dallas %>% unite(Address, c("Hse.No","Street", "location"), sep = " ",remove = FALSE)
+dallas$Address <- paste(dallas$Address, ", Dallas")
+dallas$Address <- trimws(dallas$Address)
+dallas$Address <- sapply(dallas$Address, function(x) gsub("#", "", x))
+dallas$Address <- sapply(dallas$Address, function(x) gsub("near", "", x))
+
+```
+
+
+Starting off with the first address set
+
+```{r}
+#geocodedAllDallas <- tidygeocoder::geocode(.tbl = dallas, address = Address, method = "osm", lat = latitude, long = longitude)
+#geocodedAllDallas
+#save(geocodedAllDallas, file = "allDallas.RData")
+geocodedAllDallas %>% filter(!is.na(latitude))
+```
+
+```{r}
+load(file = "allDallas.RData")
+```
+
+```{r}
+geocodedDallasFound <- geocodedAllDallas %>% filter(!is.na(latitude)) %>% filter( ((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
+geocodedDallasReDo <- geocodedAllDallas %>% filter(is.na(latitude) | !((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
+geocodedDallasReDo
+geocodedDallasFound 
+```
+
+Now we geocode the set that we did not find 'geocodedLAReDo'. I use a google maps quote for this specifically, to get the best results. Google's system works far better for interpreting ambiguous inputs.
+
+```{r}
+geocodedDallasReDo <- geocodedDallasReDo %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
+geocodedDallasReDo$Address <- paste(geocodedDallasReDo$Address, ",Dallas, Texas") 
+geocodedDallasReDo <- geocodedDallasReDo %>% select(-latitude, -longitude)
+geocodedDallasReDo
+```
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+```{r}
+#SecondDallas <- ggmap::mutate_geocode(geocodedDallasReDo, Address)
+#save(SecondDallas, file = "SecondDallas.RData")
+```
+
+
+```{r}
+load(file = "secondDallas.RData")
+SecondDallas <- SecondDallas %>% mutate(latitude = lat) %>% mutate(longitude = lon) %>% select(-lat,-lon)
+
+```
+
+
+Bring the entire dataset back together.
+
+```{r}
+dallasGeocoded <- rbind(geocodedDallasFound, SecondDallas)
+save(dallasGeocoded, file = "dallasGeocoded.RData")
+```
+
+
+```{r}
+
+dallas2 = dallasGeocoded %>% filter(location != "")
+dallas2 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
+```
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+
+```{r} 
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = dallas2, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+```
+

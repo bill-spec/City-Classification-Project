@@ -1,0 +1,77 @@
+---
+title: "Data Cleaning Dallas"
+author: "Bill Lang"
+date: "10/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+Capitalization Function 
+
+```{r}
+capitalizeRent <- function(dataFrame){
+  
+  dataFrame$Frequency <- as.character(dataFrame$Frequency)
+  dataFrame$numericFrequency <- ifelse(grepl(pattern = "m",dataFrame$Frequency), 12, 
+                            ifelse(grepl(pattern = "year",dataFrame$Frequency), 1,
+                            ifelse(grepl(pattern = "ann",dataFrame$Frequency), 1,
+                            ifelse(grepl(pattern = "week",dataFrame$Frequency),52, 12))))
+  
+  load(file = "Capitalization.RData")
+  dataFrame <- dataFrame %>% left_join(capitalizationRate, by = c("Year" = "year"))
+  
+  dataFrame$Sale.price <- as.numeric(gsub(",","",dataFrame$Sale.price))
+  dataFrame$Rent.price <- as.numeric(gsub(",","",dataFrame$Rent.price))
+  
+  dataFrame$capitalizedPrice <- ifelse( (!is.na(dataFrame$Sale.price) & (dataFrame$Sale.price != "") ), 
+                                        dataFrame$Sale.price, 
+                                        dataFrame$numericFrequency*dataFrame$cap*dataFrame$Rent.price)
+  dataFrame$capitalizedPrice <- round(dataFrame$capitalizedPrice,2)
+  return(dataFrame)
+}
+```
+
+Cleaning the Dataset. Pulling in an already Geocoded Dataset.
+
+```{r}
+load(file = "dallasGeocoded.RData")
+dallasGeocoded
+```
+
+Capitalize the Rent
+
+```{r}
+dallasData <- capitalizeRent(dallasGeocoded)
+dallasData <- dallasData %>% filter(!is.na(capitalizedPrice))
+dallasData 
+```
+
+Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 
+
+```{r}
+LAData$editArea <- tolower(LAData$editArea)
+LAData$Street <- tolower(LAData$Street)
+
+LAData$editArea <- as.factor(LAData$editArea)
+
+LAData$Price.type <- tolower(LAData$Price.type)
+LAData$Price.type <- gsub('income', 'rent', LAData$Price.type)
+LAData$Price.type <- as.factor(LAData$Price.type)
+
+LAData$Type <- tolower(LAData$Type)
+LAData$Type <- as.factor(LAData$Type)
+
+LAData$Column <- tolower(LAData$Column)
+#LAData$Totalrooms <- as.integer(LAData$Totalrooms)
+```
+
+```{r}
+save(LAData, file = "cleanLA.RData")
+```
+
+
+

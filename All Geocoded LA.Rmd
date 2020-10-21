@@ -32,7 +32,8 @@ la$Address <- sapply(la$Address, function(x) gsub("#", "", x))
 la$Address <- sapply(la$Address, function(x) gsub("near", "", x))
 ```
 
-Just doing it all at once
+
+Starting off with the first address set
 
 ```{r}
 geocodedAllAttemtpt <- tidygeocoder::geocode(.tbl = la, address = Address, method = "osm", lat = latitude, long = longitude)
@@ -40,13 +41,9 @@ geocodedAllAttemtpt
 save(geocodedAllAttemtpt, file = "allLA.RData")
 ```
 
-
-
 ```{r}
 load(file = "allLA.RData")
-geocodedAllAttemtpt %>% filter(is.na(latitude))
 ```
-
 
 ```{r}
 geocodedLA = geocodedAllAttemtpt
@@ -56,44 +53,36 @@ geocodedLAReDo
 geocodedLAFound
 ```
 
-```{r}
-
-hist(la$Year)
-hist(geocodedLAReDo$Year)
-geocodedLAFound %>% filter(Year < 1930) %>% filter(!is.na(latitude))
-
-```
-
-
-```{r}
-geocodedLAFound <- geocodedLAFound %>%
-  mutate(editArea = case_when(
-    str_detect(Area, "wilshire") ~ "wilshire",
-    str_detect(Area, "hollywood") ~ "hollywood",
-    TRUE ~ Area
-    )
-  )
-
-save(geocodedLAFound,file = "allLAFound.RData")
-```
-
-
-
-
-
-Take the redo ones and send them through again but with a general tag and not Lost Angeles California.
+Now we geocode the set that we did not find 'geocodedLAReDo'
 
 ```{r}
 geocodedLAReDo <- geocodedLAReDo %>% unite(Address, c("Hse.No","Street","Area"), sep = " ",remove = FALSE)
-geocodedLAReDo$Address <- paste(geocodedLAReDo$Address, ", CA")
+geocodedLAReDo$Address <- paste(geocodedLAReDo$Address, "LA")
 geocodedLAReDo
+```
+
+```{r}
+library(ggmap)
+ggmap::geocode
+Data <- geocodedLAReDo[1:30000,]
+
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+
+Data %>% ggmap::mutate_geocode(location = "Los Angeles", address = Address)
+Data
+
+geocodedAllCali25 %>% filter((latitude) != latitude1)
+save(geocodedAllCali25, file = "allLARedoneLA25.RData")
+geocodedAllCali25 %>% filter(!is.na(latitude1))
 ```
 
 
 ```{r}
-geocodedAllCali25 <- tidygeocoder::geocode(.tbl = geocodedLAReDo[1:25000,], address = Address, method = "osm", lat = latitude, long = longitude)
-geocodedAllCali25 %>% filter((latitude) != latitude1)
-save(geocodedAllCali25, file = "allLARedoneLA25.RData")
+## this is where the code broke in the data frame.
+geocodedLAReDo %>% filter(Address == "11045 camarillo north hollywood , CA")
+
+which(grepl("11045 camarillo north hollywood , CA", geocodedLAReDo$Address))
 ```
 
 ```{r}
@@ -112,6 +101,26 @@ geocodedAllCali50 <- tidygeocoder::geocode(.tbl = geocodedLAReDo[25001:nrow(geoc
 geocodedAllCali50 %>% filter((latitude) != latitude1)
 save(geocodedAllCali50, file = "allLARedoneLA50.RData")
 ```
+
+
+
+
+
+```{r}
+geocodedLAFound <- geocodedLAFound %>%
+  mutate(editArea = case_when(
+    str_detect(Area, "wilshire") ~ "wilshire",
+    str_detect(Area, "hollywood") ~ "hollywood",
+    TRUE ~ Area
+    )
+  )
+
+save(geocodedLAFound,file = "allLAFound.RData")
+```
+
+
+
+
 
 
 
