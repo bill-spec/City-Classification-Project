@@ -7,24 +7,122 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidygeocoder)
+library(ggmap)
+library(randomForest)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Reading in file.
 
-```{r cars}
-summary(cars)
+```{r}
+load(file = "cleanDallas.RData")
+dallasData
 ```
 
-## Including Plots
+Removing areas with no information. 
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+dallasData <- dallasData %>% filter(location != "")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Finding the top 50 labeled areas.
+
+```{r}
+dallasData$location <- tolower(dallasData$location)
+tbl <- dallasData %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas <- tbl[1:24,]$location
+listOfAreas
+save(listOfAreas, file = "AreasDallas.RData")
+```
+
+Find the observations with a top 50 area. 
+
+```{r}
+dallasAddress <- dallasData %>% filter(Area %in% listOfAreas)
+
+#saving this file for the export dataset
+dallasAddress
+
+save(dallasAddress, file = "dallasTop.RData")
+```
+
+
+This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
+ 
+```{r}
+dallasAddress$location = as.factor(dallasAddress$location)
+
+modelData <- dallasAddress 
+set.seed(343)
+shuf <- sample(nrow(modelData))
+modelData <- modelData[shuf,]
+train <- sample(nrow(modelData)*.8)
+modelTrain <- modelData[train,]
+modelTest <- modelData[-train,]
+```
+
+
+```{r}
+bag <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice, data = modelTrain, ntree = 1000, importance = TRUE)
+yhat.rf <- predict(bag, newdata = modelTest)
+misclassRate <- mean(yhat.rf != modelTest$location)
+misclassRate
+```
+
+
+We can then map the results using the ggmaps package below to manuely search for any errors.
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r} 
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+
+```
+
+
+Full Model
+
+Using all the available data we construct a full model to use for the rest of the analysis. 
+
+```{r}
+fullModel <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

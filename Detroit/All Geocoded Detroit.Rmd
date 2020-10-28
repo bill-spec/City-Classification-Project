@@ -1,7 +1,7 @@
 ---
-title: "All Geocoded Dallas"
+title: "All Geodcoded Detroit"
 author: "Bill Lang"
-date: "10/14/2020"
+date: "10/21/2020"
 output: html_document
 ---
 
@@ -22,6 +22,7 @@ dallas %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
 #35000 with and 65459 without area, Column.Loation has just Dallas
 ```
 
+
 Dataset Specific preparation
 
 ```{r}
@@ -36,18 +37,8 @@ dallas <- dallas %>% mutate(location = ifelse(Area != "", as.character(Area), as
     str_detect(location, "dallas") ~ "",
     str_detect(location, "suburban") ~ "",
     str_detect(location, "N NW Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, midway rd to central expwy") ~ "N NW Highway",
+    str_detect(location, "N NW Hwy") ~ "N NW Highway",
     str_detect(location, "N Northwest Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, w midway rd") ~ "N NW Highway",
-    str_detect(location, "n of northwest highway") ~ "N NW Highway",
-    str_detect(location, "n of nw hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, e central expwy") ~ "N NW Highway",
-    str_detect(location, "n of lbj") ~ "n lbj",
-    str_detect(location, "n lbj, e addison, w richardson") ~ "n lbj",
-    str_detect(location, "north of northwest highway") ~ "N NW Highway",
-    str_detect(location, "oak cliff, w beckley") ~ "oak cliff",
-    str_detect(location, "white rock lake - east") ~ "east white rock lake",
-    str_detect(location, "e white rock lake") ~ "east white rock lake",
     TRUE ~ location
     )
   )
@@ -106,40 +97,13 @@ register_google(key = k)
 ```{r}
 load(file = "secondDallas.RData")
 SecondDallas <- SecondDallas %>% mutate(latitude = lat) %>% mutate(longitude = lon) %>% select(-lat,-lon)
+
 ```
 
 Bring the entire dataset back together.
-Mark which columns were generated from google.
 
 ```{r}
-geocodedDallasFound <- geocodedDallasFound %>% mutate(google = 0)
-SecondDallas <- SecondDallas %>% mutate(google = 1)
 dallasGeocoded <- rbind(geocodedDallasFound, SecondDallas)
-
-dallasGeocoded <- dallasGeocoded %>% mutate(location = case_when(
-    str_detect(location, "n dallas") ~ "north dallas",
-    str_detect(location, "e dallas") ~ "east dallas",
-    str_detect(location, "dallas") ~ "",
-    str_detect(location, "suburban") ~ "",
-    str_detect(location, "N NW Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, midway rd to central expwy") ~ "N NW Highway",
-    str_detect(location, "N Northwest Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, w midway rd") ~ "N NW Highway",
-    str_detect(location, "n of northwest highway") ~ "N NW Highway",
-    str_detect(location, "n of nw hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, e central expwy") ~ "N NW Highway",
-    str_detect(location, "n of lbj") ~ "n lbj",
-    str_detect(location, "n lbj, e addison, w richardson") ~ "n lbj",
-    str_detect(location, "north of northwest highway") ~ "N NW Highway",
-    str_detect(location, "oak cliff, w beckley") ~ "oak cliff",
-    str_detect(location, "white rock lake - east") ~ "east white rock lake",
-    str_detect(location, "e white rock lake") ~ "east white rock lake",
-    str_detect(location, "e of white rock lake") ~ "east white rock lake",
-    
-    TRUE ~ location
-    )
-  )
-
 save(dallasGeocoded, file = "dallasGeocoded.RData")
 ```
 

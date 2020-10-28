@@ -42,35 +42,54 @@ load(file = "dallasGeocoded.RData")
 dallasGeocoded
 ```
 
-Capitalize the Rent
+Capitalize the Rent. Replace few NAs with the median
 
 ```{r}
 dallasData <- capitalizeRent(dallasGeocoded)
-dallasData <- dallasData %>% filter(!is.na(capitalizedPrice))
-dallasData 
+dallasData$capitalizedPrice[is.na(dallasData$capitalizedPrice)] = median(dallasData$capitalizedPrice[!is.na(dallasData$capitalizedPrice)])
+dallasData %>% filter(is.na(capitalizedPrice))
 ```
 
 Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 
 
 ```{r}
-LAData$editArea <- tolower(LAData$editArea)
-LAData$Street <- tolower(LAData$Street)
+dallasData$location <- as.factor(dallasData$location)
 
-LAData$editArea <- as.factor(LAData$editArea)
+dallasData$Price.type <- tolower(dallasData$Price.type)
+dallasData$Price.type <- gsub('income', 'rent', dallasData$Price.type)
+dallasData$Price.type <- as.factor(dallasData$Price.type)
 
-LAData$Price.type <- tolower(LAData$Price.type)
-LAData$Price.type <- gsub('income', 'rent', LAData$Price.type)
-LAData$Price.type <- as.factor(LAData$Price.type)
+dallasData$Type <- tolower(dallasData$Type)
+dallasData$Type <- as.factor(dallasData$Type)
 
-LAData$Type <- tolower(LAData$Type)
-LAData$Type <- as.factor(LAData$Type)
-
-LAData$Column <- tolower(LAData$Column)
-#LAData$Totalrooms <- as.integer(LAData$Totalrooms)
+dallasData$Column <- tolower(dallasData$Column)
 ```
 
+
+
+
+
 ```{r}
-save(LAData, file = "cleanLA.RData")
+data = dallas %>% filter(!is.na(Bedrooms)&!is.na(Total.rooms)&Bedrooms)
+
+plot(data$Bedrooms,data$Total.rooms)
+model <- lm(Bedrooms ~ Total.rooms, data)
+summary(model)
+```
+
+
+```{r}
+plot(data$Total.rooms,data$Bedrooms)
+abline(model)
+```
+
+
+
+
+
+
+```{r}
+save(dallasData, file = "cleanDallas.RData")
 ```
 
 
