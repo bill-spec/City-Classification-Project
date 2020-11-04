@@ -1,9 +1,10 @@
 ---
-title: "All Geocoded Dallas"
+title: "All Geocoded DC"
 author: "Bill Lang"
-date: "10/14/2020"
+date: "11/1/2020"
 output: html_document
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -11,34 +12,63 @@ library(tidyverse)
 library(ggmap)
 ```
 
+
 ```{r}
-load(file = "Dallas.RData")
-dallas
+#DC = read.csv("C:/Users/the36/Desktop/DataRA/hiphop_insyle/hiphop_dc.csv")
+#DChandcheck = read.csv("C:/Users/the36/Downloads/dc_handcheck.csv")
 
-dallas %>% filter(Area != "")
-dallas %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
-dallas %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+#save(DC, file = "DC.RData")
+#save(DChandcheck, file = "DChandcheck.RData")
+```
 
-#35000 with and 65459 without area, Column.Loation has just Dallas
+
+```{r}
+load(file = "DC.RData")
+load(file = "DChandcheck.RData")
+```
+
+
+```{r}
+DC
+DChandcheck
+
+
+DC %>% filter(Area != "")
+DC %>% group_by(Column) %>% summarise(count = n()) %>% arrange(desc(count))
+DC %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+
+#70,785 with and 63,725  without area, 
+
+DChandcheck <- DChandcheck %>% mutate(Area = ï..Area) %>% select(Area,State) %>% distinct() %>% filter(State != "")
+
+DChandcheck %>%  filter(Area == "north arlington")
+DChandcheck %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+
+DC <- DC %>% mutate(Area = tolower(Area)) %>% left_join(DChandcheck, by = 'Area') 
 ```
 
 Dataset Specific preparation
 
 
 #Run in Open Street Map
+
 #House Number First
 #Then run the small location (if no small area then large area)
+
+
 #Then try the same thing through google
 
 #This is the final dataset
 
 ```{r}
-dallas$Area <- tolower(dallas$Area)
-dallas$Column.Location <- tolower(dallas$Column.Location)
-dallas$Street <- tolower(dallas$Street)
+DC$Area <- tolower(DC$Area)
+DC$Column <- tolower(DC$Column)
+DC$Street <- tolower(DC$Street)
 
 
-dallas <- dallas %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column.Location))) %>%   mutate(location = case_when(
+DC <- DC %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column))) 
+
+%>%   mutate(location = case_when(
     str_detect(location, "n dallas") ~ "north dallas",
     str_detect(location, "e dallas") ~ "east dallas",
     str_detect(location, "dallas") ~ "",
@@ -59,25 +89,25 @@ dallas <- dallas %>% mutate(location = ifelse(Area != "", as.character(Area), as
     TRUE ~ location
     )
   )
-dallas %>% filter(location != "")
-#52371 not blank area
+DC %>% filter(location != "")
 
-dallas <- dallas %>% unite(Address, c("Hse.No","Street", "location"), sep = " ",remove = FALSE)
-dallas$Address <- paste(dallas$Address, ", Dallas")
-dallas$Address <- trimws(dallas$Address)
-dallas$Address <- sapply(dallas$Address, function(x) gsub("#", "", x))
-dallas$Address <- sapply(dallas$Address, function(x) gsub("near", "", x))
-
+DC <- DC %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
+DC$Address <- paste(DC$Address, ", DC")
+DC$Address <- trimws(DC$Address)
+DC$Address <- sapply(DC$Address, function(x) gsub("#", "", x))
+DC$Address <- sapply(DC$Address, function(x) gsub("near", "", x))
+DC$Address <- gsub("[.]", "", DC$Address)
+DC$Address[which(DC$Address  == ", DC")] <- ""
 ```
 
 
 Starting off with the first address set
 
 ```{r}
-#geocodedAllDallas <- tidygeocoder::geocode(.tbl = dallas, address = Address, method = "osm", lat = latitude, long = longitude)
-#geocodedAllDallas
-#save(geocodedAllDallas, file = "allDallas.RData")
-geocodedAllDallas %>% filter(!is.na(latitude))
+geocodedAllDC <- tidygeocoder::geocode(.tbl = DC, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodedAllDC
+save(geocodedAllDC, file = "allDC.RData")
+geocodedAllDC %>% filter(!is.na(latitude))
 ```
 
 ```{r}
