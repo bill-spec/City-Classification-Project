@@ -39,43 +39,51 @@ capitalizeRent <- function(dataFrame){
 Cleaning the Dataset. Pulling in an already Geocoded Dataset.
 
 ```{r}
-load(file = "dallasGeocoded.RData")
-dallasGeocoded
+load(file = "DCGeocoded.RData")
+DCGeocoded
 ```
 
 Capitalize the Rent. Replace few NAs with the median
 
 ```{r}
-dallasData <- capitalizeRent(dallasGeocoded)
-dallasData$capitalizedPrice[is.na(dallasData$capitalizedPrice)] = median(dallasData$capitalizedPrice[!is.na(dallasData$capitalizedPrice)])
-dallasData %>% filter(is.na(capitalizedPrice))
+DCData <- capitalizeRent(DCGeocoded)
+DCData$capitalizedPrice[is.na(DCData$capitalizedPrice)] = median(DCData$capitalizedPrice[!is.na(DCData$capitalizedPrice)])
+DCData %>% filter(is.na(capitalizedPrice))
 ```
 
 Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 
 
 ```{r}
-dallasData$location <- as.factor(dallasData$location)
+DCData$location <- as.factor(DCData$location)
 
-dallasData$Price.type <- tolower(dallasData$Price.type)
-dallasData$Price.type <- gsub('income', 'rent', dallasData$Price.type)
-dallasData$Price.type <- as.factor(dallasData$Price.type)
+DCData$Price.type <- tolower(DCData$Price.type)
+DCData$Price.type <- gsub('income', 'rent', DCData$Price.type)
+DCData$Price.type <- as.factor(DCData$Price.type)
 
-dallasData$Type <- tolower(dallasData$Type)
-dallasData$Type <- as.factor(dallasData$Type)
+DCData$Type <- tolower(DCData$Type)
+DCData$Type <- as.factor(DCData$Type)
 
-dallasData$Column <- tolower(dallasData$Column)
+DCData$Column <- tolower(DCData$Column)
 ```
 
 
-
-
+Creating a regression for total rooms calculation
 
 ```{r}
-data = dallas %>% filter(!is.na(Bedrooms)&!is.na(Total.rooms)&Bedrooms)
+
+dim(DCData %>% filter(Total.rooms != ""))[1] #rows with total rooms
+dim(DCData %>% filter(Bedrooms != ""))[1]    #rows with bedrooms
+
+data = DCData %>% filter(Bedrooms != "" & Total.rooms != "") #obs with both for model
 
 plot(data$Bedrooms,data$Total.rooms)
-model <- lm(Bedrooms ~ Total.rooms, data)
-summary(model)
+model <- lm(Total.rooms ~ Bedrooms, data)
+summary(carsregcoef)
+
+coeff = model$coefficients
+names(coeff) <- NULL
+multiple = coeff[2]
+multiple 
 ```
 
 

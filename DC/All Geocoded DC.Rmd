@@ -242,12 +242,15 @@ load(file = "full.RData")
 
 full = full %>% mutate(latitude = latitude1) %>% mutate(longitude = longitude1) %>% select(-latitude1, -longitude1)
 geocodedDCFound <- geocodedDCFound %>% add_column(AddressLocation = "", .before = "State")
-newDC = rbind(geocodedDCFound,full)
+DCGeocoded = rbind(geocodedDCFound,full)
 
 newDC %>% filter(is.na(latitude)) %>% filter(Address == "")
 ```
 
 
+```{r}
+save(DCGeocoded, file = "DCGeocoded.RData")
+```
 
 
 
