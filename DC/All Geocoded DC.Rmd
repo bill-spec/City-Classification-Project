@@ -14,40 +14,87 @@ library(ggmap)
 
 
 ```{r}
-#DC = read.csv("C:/Users/the36/Desktop/DataRA/hiphop_insyle/hiphop_dc.csv")
-#DChandcheck = read.csv("C:/Users/the36/Downloads/dc_handcheck.csv")
-
-#save(DC, file = "DC.RData")
-#save(DChandcheck, file = "DChandcheck.RData")
-```
-
-
-```{r}
 load(file = "DC.RData")
 load(file = "DChandcheck.RData")
+
 ```
+
 
 
 ```{r}
 DC
 DChandcheck
 
-
 DC %>% filter(Area != "")
 DC %>% group_by(Column) %>% summarise(count = n()) %>% arrange(desc(count))
 DC %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
 
-#70,785 with and 63,725  without area, 
+#70,785 with and 63,725 without area, 
 
 DChandcheck <- DChandcheck %>% mutate(Area = ï..Area) %>% select(Area,State) %>% distinct() %>% filter(State != "")
 
-DChandcheck %>%  filter(Area == "north arlington")
 DChandcheck %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
 
 DC <- DC %>% mutate(Area = tolower(Area)) %>% left_join(DChandcheck, by = 'Area') 
+DC %>% filter(is.na(State))
 ```
 
-Dataset Specific preparation
+
+```{r}
+DC$Column <- tolower(DC$Column)
+DC$Column <- gsub("[.]", "", DC$Column)
+DC$Column <- trimws(DC$Column)
+
+DC$Area <- tolower(DC$Area)
+DC$Area <- gsub("[.]", "", DC$Area)
+DC$Area <- trimws(DC$Area)
+
+md = c("maryland|md|montgomery|prince george's|mont|prince georges|prince george|bethesda|silver spring|college park|prince geo|princegeo|princ geo|annapolis|chevy chase|rockville|gaithersburg")
+va = c("virginia|va|alexandria|fairfax|arlington|falls church")
+dc = c("dc|d c|district of columbia|washington|district columbia|georgetown")
+
+DC <- DC %>% mutate(State = ifelse(grepl(md, Column, ignore.case = TRUE), "MD", as.character(State))) 
+DC <- DC %>% mutate(State = ifelse(grepl(va, Column, ignore.case = TRUE), "VA", as.character(State))) 
+DC <- DC %>% mutate(State = ifelse(grepl(dc, Column, ignore.case = TRUE), "DC", as.character(State))) 
+
+DC <- DC %>% mutate(State = ifelse(grepl(md, Area, ignore.case = TRUE), "MD", as.character(State))) 
+DC <- DC %>% mutate(State = ifelse(grepl(va, Area, ignore.case = TRUE), "VA", as.character(State))) 
+DC <- DC %>% mutate(State = ifelse(grepl(dc, Area, ignore.case = TRUE), "DC", as.character(State))) 
+
+DC %>% filter(is.na(State))
+
+#now only 72,411 don't have a state designation and we can assume that they are in DC
+#other ideas such as google, or simply trying each state designation may help later
+
+
+#These are the top tags without a state information
+DC %>% filter(is.na(State)) %>% group_by(Column) %>% summarise(count = n()) %>% arrange(desc(count))
+DC %>% filter(is.na(State)) %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+
+#These are clear typos in the top several locations
+DC <- DC %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column))) %>%   mutate(location = case_when(
+    str_detect(location, "nw") ~ "northwest",
+    str_detect(location, "#ref!") ~ "",
+    str_detect(location, "sw") ~ "southwest",
+    str_detect(location, "(nw)") ~ "",
+    str_detect(location, "ne") ~ "northeast",
+    str_detect(location, "se") ~ "southeast",
+    str_detect(location, "silver spring, md") ~ "silver spring",
+    str_detect(location, "arlington n") ~ "arlington",
+    str_detect(location, "alexandria, va") ~ "alexandria",
+    str_detect(location, "arlington, va") ~ "arlington",
+    str_detect(location, "takoma park, md") ~ "takoma park",
+    TRUE ~ location
+    )
+  )
+
+#overall 61,466 locations are missing
+#There are roughly 15 locations that are greater than 500 observations
+
+DC %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
+DC$location <- trimws(DC$location)
+
+```
 
 
 #Run in Open Street Map
@@ -65,70 +112,148 @@ DC$Area <- tolower(DC$Area)
 DC$Column <- tolower(DC$Column)
 DC$Street <- tolower(DC$Street)
 
+#DC has street information in only 45142 observations
+dim(DC %>% filter(Street != ""))[1]
 
-DC <- DC %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column))) 
+#DC has a Hse.no information in only 14806 observations, although, some streets have the Hse.no as a part of them
+dim(DC %>% filter(Hse.No != ""))[1]
 
-%>%   mutate(location = case_when(
-    str_detect(location, "n dallas") ~ "north dallas",
-    str_detect(location, "e dallas") ~ "east dallas",
-    str_detect(location, "dallas") ~ "",
-    str_detect(location, "suburban") ~ "",
-    str_detect(location, "N NW Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, midway rd to central expwy") ~ "N NW Highway",
-    str_detect(location, "N Northwest Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, w midway rd") ~ "N NW Highway",
-    str_detect(location, "n of northwest highway") ~ "N NW Highway",
-    str_detect(location, "n of nw hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, e central expwy") ~ "N NW Highway",
-    str_detect(location, "n of lbj") ~ "n lbj",
-    str_detect(location, "n lbj, e addison, w richardson") ~ "n lbj",
-    str_detect(location, "north of northwest highway") ~ "N NW Highway",
-    str_detect(location, "oak cliff, w beckley") ~ "oak cliff",
-    str_detect(location, "white rock lake - east") ~ "east white rock lake",
-    str_detect(location, "e white rock lake") ~ "east white rock lake",
+#Overall we only have 45142 observations to geocode in this part, not nearly as much as other cities
+```
+
+
+```{r}
+DC$State[is.na(DC$State)] <- ""
+DC$State[DC$State == ""] <- "DC"
+
+DC <- DC %>% unite(Address1, c("Hse.No","Street"), sep = " ",remove = FALSE)
+
+DC <- DC %>% unite(Address, c("Address1","State"), sep = ", ",remove = FALSE)
+DC$Address <- trimws(DC$Address)
+
+DC %>% group_by(Address) %>% summarise(count = n()) %>% arrange(desc(count))
+
+DC <- DC %>% mutate(Address = case_when(
+    str_detect(location, "nw") ~ "northwest",
+    str_detect(location, "sw") ~ "southwest",
+    str_detect(location, "ne") ~ "northeast",
+    str_detect(location, "se") ~ "southeast",
     TRUE ~ location
     )
   )
-DC %>% filter(location != "")
 
-DC <- DC %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
-DC$Address <- paste(DC$Address, ", DC")
-DC$Address <- trimws(DC$Address)
+
+
 DC$Address <- sapply(DC$Address, function(x) gsub("#", "", x))
 DC$Address <- sapply(DC$Address, function(x) gsub("near", "", x))
 DC$Address <- gsub("[.]", "", DC$Address)
 DC$Address[which(DC$Address  == ", DC")] <- ""
+DC$Address[which(DC$Address  == ", MD")] <- ""
+DC$Address[which(DC$Address  == ", VA")] <- ""
+
+DC %>% group_by(Address) %>% summarise(count = n()) %>% arrange(desc(count))
+
+#In total we only have 45499 observations to geocode based on its street
+dim(DC)[1] - dim(DC %>% filter(Address == ""))[1]
+
 ```
 
 
 Starting off with the first address set
 
 ```{r}
-geocodedAllDC <- tidygeocoder::geocode(.tbl = DC, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodedAllDC
+#We start with the 45499 that have observations
+#Then we join them with the no address columns and move on
+
+AddressGroup = DC[DC$Address != "",]
+
+nonAddressGroup = DC[DC$Address == "",]
+nonAddressGroup = nonAddressGroup %>% add_column(latitude = NA) %>% add_column(longitude = NA) %>% mutate(latitude = as.double(latitude)) %>% mutate(longitude = as.double(longitude))
+
+geocodedAddressDC <- tidygeocoder::geocode(.tbl = AddressGroup, address = Address, method = "osm", lat = latitude, long = longitude)
+
+#join the files back together and save them 
+geocodedAllDC = rbind(geocodedAddressDC, nonAddressGroup)
 save(geocodedAllDC, file = "allDC.RData")
-geocodedAllDC %>% filter(!is.na(latitude))
+
+geocodedAllDC %>% filter(is.na(latitude))
 ```
 
 ```{r}
-load(file = "allDallas.RData")
+load(file = "allDC.RData")
 ```
 
 ```{r}
-geocodedDallasFound <- geocodedAllDallas %>% filter(!is.na(latitude)) %>% filter( ((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
-geocodedDallasReDo <- geocodedAllDallas %>% filter(is.na(latitude) | !((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
-geocodedDallasReDo
-geocodedDallasFound 
+geocodedDCFound <- geocodedAllDC %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+geocodedDCReDo <- geocodedAllDC %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+geocodedDCFound
+geocodedDCReDo
 ```
 
 Now we geocode the set that we did not find 'geocodedLAReDo'. I use a google maps quote for this specifically, to get the best results. Google's system works far better for interpreting ambiguous inputs.
 
 ```{r}
-geocodedDallasReDo <- geocodedDallasReDo %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
-geocodedDallasReDo$Address <- paste(geocodedDallasReDo$Address, ",Dallas, Texas") 
+geocodedDCReDo$State[is.na(geocodedDCReDo$State)] <- ""
 geocodedDallasReDo <- geocodedDallasReDo %>% select(-latitude, -longitude)
-geocodedDallasReDo
+geocodedDCReDo$State[geocodedDCReDo$State == ""] <- "DC"
+
+geocodedDCReDo <- geocodedDCReDo %>% unite(AddressLocation, c("location","State"), sep = ", ",remove = FALSE)
+geocodedDCReDo$AddressLocation <- gsub("[.]", "", geocodedDCReDo$AddressLocation)
+
+#We want more concise information than simply the state or the city of DC, so this information is effectively null
+geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "dc"] <- ""
+geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "virginia"] <- ""
+geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "maryland"] <- ""
+geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == ", DC"] <- ""
+geocodedDCReDo
 ```
+
+```{r}
+DC20 <- tidygeocoder::geocode(.tbl = geocodedDCReDo[1:20000,], address = AddressLocation, method = "osm", lat = latitude, long = longitude)
+save(DC20, file = "DC20.RData")
+
+DC40 <- tidygeocoder::geocode(.tbl = geocodedDCReDo[20001:40000,], address = AddressLocation, method = "osm", lat = latitude, long = longitude)
+save(DC40, file = "DC40.RData")
+
+DC60 <- tidygeocoder::geocode(.tbl = geocodedDCReDo[40001:60000,], address = AddressLocation, method = "osm", lat = latitude, long = longitude)
+save(DC60, file = "DC60.RData")
+
+DC80 <- tidygeocoder::geocode(.tbl = geocodedDCReDo[60001:80000,], address = AddressLocation, method = "osm", lat = latitude, long = longitude)
+save(DC80, file = "DC80.RData")
+
+```
+
+
+```{r}
+load(file = "DC20.RData")
+load(file = "DC40.RData")
+load(file = "DC60.RData")
+load(file = "DC80.RData")
+load(file = "DCRest.RData")
+
+DC20
+DC40
+DC60
+DC80 <- DC80[1:9764,]
+
+full = rbind(DC20,DC40,DC60,DC80)
+save(full, file = "full.RData")
+load(file = "full.RData")
+
+full = full %>% mutate(latitude = latitude1) %>% mutate(longitude = longitude1) %>% select(-latitude1, -longitude1)
+geocodedDCFound <- geocodedDCFound %>% add_column(AddressLocation = "", .before = "State")
+newDC = rbind(geocodedDCFound,full)
+
+newDC %>% filter(is.na(latitude)) %>% filter(Address == "")
+```
+
+
+
+
+
+
+
+
 
 ```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
@@ -154,40 +279,11 @@ geocodedDallasFound <- geocodedDallasFound %>% mutate(google = 0)
 SecondDallas <- SecondDallas %>% mutate(google = 1)
 dallasGeocoded <- rbind(geocodedDallasFound, SecondDallas)
 
-dallasGeocoded <- dallasGeocoded %>% mutate(location = case_when(
-    str_detect(location, "n dallas") ~ "north dallas",
-    str_detect(location, "e dallas") ~ "east dallas",
-    str_detect(location, "dallas") ~ "",
-    str_detect(location, "suburban") ~ "",
-    str_detect(location, "N NW Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, midway rd to central expwy") ~ "N NW Highway",
-    str_detect(location, "N Northwest Hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, w midway rd") ~ "N NW Highway",
-    str_detect(location, "n of northwest highway") ~ "N NW Highway",
-    str_detect(location, "n of nw hwy") ~ "N NW Highway",
-    str_detect(location, "n nw hwy, e central expwy") ~ "N NW Highway",
-    str_detect(location, "n of lbj") ~ "n lbj",
-    str_detect(location, "n lbj, e addison, w richardson") ~ "n lbj",
-    str_detect(location, "north of northwest highway") ~ "N NW Highway",
-    str_detect(location, "oak cliff, w beckley") ~ "oak cliff",
-    str_detect(location, "white rock lake - east") ~ "east white rock lake",
-    str_detect(location, "e white rock lake") ~ "east white rock lake",
-    str_detect(location, "e of white rock lake") ~ "east white rock lake",
-    
-    TRUE ~ location
-    )
-  )
 
 save(dallasGeocoded, file = "dallasGeocoded.RData")
 ```
 
 
-```{r}
-load(file = "dallasGeocoded.RData")
-
-dallas2 = dallasGeocoded %>% filter(location != "")
-dallas2 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
-```
 
 ```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
@@ -197,8 +293,8 @@ register_google(key = k)
 
 
 ```{r} 
-map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = dallas2, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+map <- get_map(location = 'DC', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = newDC, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
 
 ```
 
