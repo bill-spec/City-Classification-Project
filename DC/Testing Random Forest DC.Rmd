@@ -10,6 +10,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidygeocoder)
+library(randomForest)
 library(ggmap)
 ```
 
@@ -17,36 +18,38 @@ library(ggmap)
 Next we can take the 37,506 observations that aren't inside the top 50 regions, predict the most likely region to classify them in, and investigate if the results seem correct.
 
 ```{r}
-load("cleanDallas.RData")
-bostonData
+load("cleanDC.RData")
+cleanDC
 ```
 
 ```{r}
-bostonAddress <- bostonData %>% filter(!(Area %in% listOfAreas))
-bostonAddress 
-```
-
-```{r}
-geocodeFileClassify <- bostonAddress %>% filter(!is.na(latitude))
-geocodeFileClassify
+load(file = "AreasDC.RData")
+toClassify <- cleanDC %>% filter(!(location %in% listOfAreas))%>% filter(!is.na(latitude))
+toClassify 
 ```
 
 Predict the data using the previous model and map the results for validation. 
 
 ```{r}
-yhat.rf <- predict(fullModel, newdata = geocodeFileClassify)
-predicted <- cbind(geocodeFileClassify,yhat.rf)
+yhat.rf <- predict(fullModel, newdata = toClassify)
+predicted <- cbind(toClassify,yhat.rf)
 predicted <- predicted %>% mutate(calculatedColumn = yhat.rf) %>% select(-yhat.rf)
 predicted
 
 #Saving for the predicted file
-save(predicted, file = "predicctedBoston.RData")
+save(predicted, file = "predicctedDC.RData")
 ```
 
 
 ```{r}
-map <- get_map(location = 'Boston', zoom =8 , maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = 1)+ theme(legend.position = "none")
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r} 
+map <- get_map(location = 'DC', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = 0.1) + theme(legend.position = "none")
 ```
 
 

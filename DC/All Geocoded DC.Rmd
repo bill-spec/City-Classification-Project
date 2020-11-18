@@ -15,15 +15,21 @@ library(ggmap)
 
 ```{r}
 load(file = "DC.RData")
-load(file = "DChandcheck.RData")
 
+
+
+
+load(file = "DChandcheck.RData")
 ```
 
 
 
 ```{r}
-DC
+DC = DC[1:93879,] 
+
+DC 
 DChandcheck
+
 
 DC %>% filter(Area != "")
 DC %>% group_by(Column) %>% summarise(count = n()) %>% arrange(desc(count))
@@ -72,23 +78,21 @@ DC %>% filter(is.na(State)) %>% group_by(Column) %>% summarise(count = n()) %>% 
 DC %>% filter(is.na(State)) %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
 
 #These are clear typos in the top several locations
-DC <- DC %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column))) %>%   mutate(location = case_when(
-    str_detect(location, "nw") ~ "northwest",
-    str_detect(location, "#ref!") ~ "",
-    str_detect(location, "sw") ~ "southwest",
-    str_detect(location, "(nw)") ~ "",
-    str_detect(location, "ne") ~ "northeast",
-    str_detect(location, "se") ~ "southeast",
-    str_detect(location, "silver spring, md") ~ "silver spring",
-    str_detect(location, "arlington n") ~ "arlington",
-    str_detect(location, "alexandria, va") ~ "alexandria",
-    str_detect(location, "arlington, va") ~ "arlington",
-    str_detect(location, "takoma park, md") ~ "takoma park",
-    TRUE ~ location
-    )
-  )
+DC <- DC %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column))) %>%
+    mutate(location = str_replace_all(location, " nw ","northwest")) %>%
+    mutate(location = str_replace_all(location, "ref","")) %>%
+    mutate(location = str_replace_all(location, "(nw)","")) %>%
+    mutate(location = str_replace_all(location, " ne ","northeast")) %>%
+    mutate(location = str_replace_all(location, " se ","southeast")) %>%
+    mutate(location = str_replace_all(location, "silver spring, md","silver spring")) %>%
+    mutate(location = str_replace_all(location, "alexandria, va","alexandria")) %>%
+    mutate(location = str_replace_all(location, "arlington n","arlington")) %>%
+    mutate(location = str_replace_all(location, "arlington, va","arlington")) %>%
+    mutate(location = str_replace_all(location, "takoma park, md","takoma park"))
+  
 
-#overall 61,466 locations are missing
+
+#overall 62600 locations are missing
 #There are roughly 15 locations that are greater than 500 observations
 
 DC %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
@@ -128,20 +132,55 @@ DC$State[DC$State == ""] <- "DC"
 
 DC <- DC %>% unite(Address1, c("Hse.No","Street"), sep = " ",remove = FALSE)
 
-DC <- DC %>% unite(Address, c("Address1","State"), sep = ", ",remove = FALSE)
+DC$Address1 = tolower(DC$Address1)
+
+
+DC$Address1 = paste(DC$Address1, " ", sep = "")
+
+DC = DC %>% 
+  mutate(Address1 = str_replace_all(Address1, ",", " ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "[.]"," ")) %>%
+  mutate(Address1 = str_replace_all(Address1, " ne ", " northeast ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "#ref!", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " se "," southeast ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " sw "," southwest ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " nw ", " northwest ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "ny","new york")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "n y", "new york") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "mass ","massachusetts ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "conn ","connecticut ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " f "," F ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " f "," F ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " d "," D ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " d ","D") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " e "," E ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " e ","E") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " a "," A ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " a ","A")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " b "," B ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " b ","B")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " c "," C ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " c ","C")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " rd "," road ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ave "," avenue ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " st "," street ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ct "," court ")) %>%
+  mutate(Address1 = str_replace_all(Address1, " pl "," place ") ) %>%
+  mutate(Address1 = str_replace_all(Address1, " rd,"," road,")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ave,"," avenue,")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " st,"," street,")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ct,"," court,")) %>%
+  mutate(Address1 = str_replace_all(Address1, " pl,"," place,") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "americana","american") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "near",""))
+
+
+DC = DC %>% unite(Address, c("Address1","State"), sep = ", ",remove = FALSE)
 DC$Address <- trimws(DC$Address)
 
 DC %>% group_by(Address) %>% summarise(count = n()) %>% arrange(desc(count))
-
-DC <- DC %>% mutate(Address = case_when(
-    str_detect(location, "nw") ~ "northwest",
-    str_detect(location, "sw") ~ "southwest",
-    str_detect(location, "ne") ~ "northeast",
-    str_detect(location, "se") ~ "southeast",
-    TRUE ~ location
-    )
-  )
-
 
 
 DC$Address <- sapply(DC$Address, function(x) gsub("#", "", x))
@@ -169,14 +208,17 @@ AddressGroup = DC[DC$Address != "",]
 
 nonAddressGroup = DC[DC$Address == "",]
 nonAddressGroup = nonAddressGroup %>% add_column(latitude = NA) %>% add_column(longitude = NA) %>% mutate(latitude = as.double(latitude)) %>% mutate(longitude = as.double(longitude))
+```
 
+
+```{r}
 geocodedAddressDC <- tidygeocoder::geocode(.tbl = AddressGroup, address = Address, method = "osm", lat = latitude, long = longitude)
 
 #join the files back together and save them 
 geocodedAllDC = rbind(geocodedAddressDC, nonAddressGroup)
 save(geocodedAllDC, file = "allDC.RData")
 
-geocodedAllDC %>% filter(is.na(latitude))
+geocodedAllDC %>% filter(!is.na(latitude))
 ```
 
 ```{r}
@@ -190,23 +232,26 @@ geocodedDCFound
 geocodedDCReDo
 ```
 
-Now we geocode the set that we did not find 'geocodedLAReDo'. I use a google maps quote for this specifically, to get the best results. Google's system works far better for interpreting ambiguous inputs.
+Now we geocode the set that we did not find 'geocodedDCReDo'. 
 
 ```{r}
 geocodedDCReDo$State[is.na(geocodedDCReDo$State)] <- ""
-geocodedDallasReDo <- geocodedDallasReDo %>% select(-latitude, -longitude)
+geocodedDCReDo <- geocodedDCReDo %>% select(-latitude, -longitude)
 geocodedDCReDo$State[geocodedDCReDo$State == ""] <- "DC"
 
 geocodedDCReDo <- geocodedDCReDo %>% unite(AddressLocation, c("location","State"), sep = ", ",remove = FALSE)
 geocodedDCReDo$AddressLocation <- gsub("[.]", "", geocodedDCReDo$AddressLocation)
+geocodedDCReDo$AddressLocation <- gsub("#", "", geocodedDCReDo$AddressLocation)
+geocodedDCReDo$AddressLocation <- gsub("!", "", geocodedDCReDo$AddressLocation)
 
 #We want more concise information than simply the state or the city of DC, so this information is effectively null
-geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "dc"] <- ""
-geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "virginia"] <- ""
-geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "maryland"] <- ""
+geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "dc, DC"] <- ""
+geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "virginia, VA"] <- ""
+geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == "maryland, MD"] <- ""
 geocodedDCReDo$AddressLocation[geocodedDCReDo$AddressLocation  == ", DC"] <- ""
 geocodedDCReDo
 ```
+
 
 ```{r}
 DC20 <- tidygeocoder::geocode(.tbl = geocodedDCReDo[1:20000,], address = AddressLocation, method = "osm", lat = latitude, long = longitude)
@@ -229,7 +274,6 @@ load(file = "DC20.RData")
 load(file = "DC40.RData")
 load(file = "DC60.RData")
 load(file = "DC80.RData")
-load(file = "DCRest.RData")
 
 DC20
 DC40
@@ -238,66 +282,254 @@ DC80 <- DC80[1:9764,]
 
 full = rbind(DC20,DC40,DC60,DC80)
 save(full, file = "full.RData")
+
 load(file = "full.RData")
 
-full = full %>% mutate(latitude = latitude1) %>% mutate(longitude = longitude1) %>% select(-latitude1, -longitude1)
-geocodedDCFound <- geocodedDCFound %>% add_column(AddressLocation = "", .before = "State")
-DCGeocoded = rbind(geocodedDCFound,full)
+#full = full %>% mutate(latitude = latitude1) %>% mutate(longitude = longitude1) %>% select(-latitude1, -longitude1)
 
-newDC %>% filter(is.na(latitude)) %>% filter(Address == "")
+found <- full %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- full %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+
+found
+notFound
+
+geocodedDCFound = geocodedDCFound %>% add_column(AddressLocation = "", .before = "State")
+
+DCGeocoded = rbind(geocodedDCFound,found)
+
+notFound %>% filter(is.na(latitude)) %>% filter(Address == "")
+
+
+
+
 ```
 
+Second Pass at addresses
 
 ```{r}
+
+notFound$Address1 = paste(notFound$Address1, " ", sep = "")
+
+notFound <- notFound %>% 
+  mutate(Address1 = str_replace_all(Address1, ",", " ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "[.]"," ")) %>%
+  mutate(Address1 = str_replace_all(Address1, " northeast ", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "#ref!", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " se "," southeast ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " sw "," southwest ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " nw ", " northwest ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "ny","new york")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "n y", "new york") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " n j ", " new jersey ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "mass ","massachusetts ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "conn ","connecticut ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " f "," F ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " f "," F ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " d "," D ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " d ","D") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " e "," E ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " e ","E") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " a "," A ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " a ","A")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " b "," B ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " b ","B")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " c "," C ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " c ","C")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " rd "," road ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ave "," avenue ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " street ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ct "," court ")) %>%
+  mutate(Address1 = str_replace_all(Address1, " pl "," place ") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "americana","american") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "near","")) 
+
+
+notFound = notFound %>% unite(Address, c("Address1","State"), sep = ", ",remove = FALSE) %>% select(-latitude,-longitude)
+notFound$Address <- trimws(notFound$Address)
+notFound
+
+```
+
+```{r}
+DCSecondPassAddress <- tidygeocoder::geocode(.tbl = notFound, address = Address, method = "osm", lat = latitude, long = longitude)
+save(DCSecondPassAddress, file = "DCSecondPassAddress.RData")
+```
+
+```{r}
+load(file = "DCSecondPassAddress.RData")
+found <- DCSecondPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- DCSecondPassAddress %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+
+found
+notFound
+```
+
+```{r}
+DCGeocoded = rbind(DCGeocoded,found)
 save(DCGeocoded, file = "DCGeocoded.RData")
 ```
 
 
 
+```{r}
+
+notFound$Address1 = paste(notFound$Address1, " ", sep = "")
+
+notFound <- notFound %>% 
+  mutate(Address1 = str_replace_all(Address1, ",", " ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "[.]"," ")) %>%
+  mutate(Address1 = str_replace_all(Address1, " northeast ", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "#ref!", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " southeast ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " southwest ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " northwest ", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "ny","new york")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "n y", "new york") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " n j ", " new jersey ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "mass ","massachusetts ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "conn ","connecticut ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " f "," F ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " f "," F ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " d "," D ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " h "," H street") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " u "," U street ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " e ","E") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "northwest","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " a ","A")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " b "," B ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "r i  ","rhode island ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " F "," F Street ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " c ","C")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " rd "," road ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ave "," avenue ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " street ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ct "," court ")) %>%
+  mutate(Address1 = str_replace_all(Address1, " pl "," place ") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "americana","american") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "near","")) 
+
+notFound$State <- trimws(notFound$State)
+notFound = notFound %>% mutate(State = ifelse(State == "DC", "Washington, DC", as.character(State)) )
+notFound = notFound %>% unite(Address, c("Address1","State"), sep = " ",remove = FALSE) %>% select(-latitude,-longitude)
+notFound$Address <- trimws(notFound$Address)
+notFound
+```
 
 
 
 
 ```{r}
-k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
-register_google(key = k)
-```
-
-```{r}
-#SecondDallas <- ggmap::mutate_geocode(geocodedDallasReDo, Address)
-#save(SecondDallas, file = "SecondDallas.RData")
+DCSecondPassAddress <- tidygeocoder::geocode(.tbl = notFound, address = Address, method = "osm", lat = latitude, long = longitude)
+save(DCSecondPassAddress, file = "DCSecondPassAddress.RData")
 ```
 
 
 ```{r}
-load(file = "secondDallas.RData")
-SecondDallas <- SecondDallas %>% mutate(latitude = lat) %>% mutate(longitude = lon) %>% select(-lat,-lon)
+load(file = "DCSecondPassAddress.RData")
+found <- DCSecondPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- DCSecondPassAddress %>% filter( is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+
+found
+save(notFound, file = "DCnotFound.RData")
 ```
+
+```{r}
+DCGeocoded = rbind(DCGeocoded,found)
+save(DCGeocoded, file = "DCGeocoded.RData")
+```
+
+
+
+#two more attempts, one with the census geocoder and one with location used.
+
+```{r}
+notFound$location = notFound$location %>% replace_na("")
+notFound %>% group_by(AddressLocation) %>% summarise(count = n()) %>% arrange(desc(count))
+```
+
+```{r}
+
+notFound$Address1 = paste(notFound$Address1, " ", sep = "")
+
+notFound <- notFound %>% 
+  mutate(Address1 = str_replace_all(Address1, ",", " ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "[.]"," ")) %>%
+  mutate(Address1 = str_replace_all(Address1, " # ", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "#ref!", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ! ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " southwest ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " northwest ", "")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "ny","new york")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "n y", "new york") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " n j ", " new jersey ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "mass ","massachusetts ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "conn ","connecticut ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " g "," G ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " & "," and ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "'"," ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "-","") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " h "," H street") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " u "," U street ") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, " e ","E") ) %>% 
+  mutate(Address1 = str_replace_all(Address1, "northwest","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " a ","A")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " b "," B ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " r i  ","rhode island ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "\" ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " \' ","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " rd "," road ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " ave "," avenue ")) %>% 
+  mutate(Address1 = str_replace_all(Address1, "/","")) %>% 
+  mutate(Address1 = str_replace_all(Address1, " \\)","")) %>%
+  mutate(Address1 = str_replace_all(Address1, "\\(","") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "^","") ) %>%
+  mutate(Address1 = str_replace_all(Address1, "#","")) 
+
+notFound$State <- trimws(notFound$State)
+notFound = notFound %>% mutate(State = ifelse(State == "DC", "Washington, DC", as.character(State)) )
+notFound = notFound %>% unite(Address, c("Address1","State"), sep = " ",remove = FALSE) %>% select(-latitude,-longitude)
+notFound$Address <- trimws(notFound$Address)
+notFound
+```
+
+```{r}
+DCThirdPassAddress <- tidygeocoder::geocode(.tbl = notFound[1:500,], address = Address, method = "census", lat = latitude, long = longitude)
+DCThirdPassAddress %>% filter(!is.na(latitude))
+save(DCThirdPassAddress, file = "DCThirdPassAddress.RData")
+```
+
+```{r}
+load(file = "DCThirdPassAddress.RData")
+found <- DCThirdPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- DCThirdPassAddress %>% filter( is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+
+found
+notFound
+```
+
+```{r}
+DCGeocoded = rbind(DCGeocoded,found)
+save(DCGeocoded, file = "DCGeocoded.RData")
+notFound
+```
+
 
 Bring the entire dataset back together.
 Mark which columns were generated from google.
 
 ```{r}
-geocodedDallasFound <- geocodedDallasFound %>% mutate(google = 0)
-SecondDallas <- SecondDallas %>% mutate(google = 1)
-dallasGeocoded <- rbind(geocodedDallasFound, SecondDallas)
-
-
-save(dallasGeocoded, file = "dallasGeocoded.RData")
-```
-
-
-
-```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
 register_google(key = k)
 ```
 
-
-
 ```{r} 
 map <- get_map(location = 'DC', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = newDC, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+ggmap(map) + geom_point(data = DCGeocoded, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
 
 ```
 

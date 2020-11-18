@@ -40,6 +40,9 @@ Cleaning the Dataset. Pulling in an already Geocoded Dataset.
 
 ```{r}
 load(file = "DCGeocoded.RData")
+
+DCGeocoded = DCGeocoded %>% select(-Address1) %>% select(ï..Transcriber:Area,Hse.No:location,Address,latitude,longitude)
+
 DCGeocoded
 ```
 
@@ -78,18 +81,29 @@ data = DCData %>% filter(Bedrooms != "" & Total.rooms != "") #obs with both for 
 
 plot(data$Bedrooms,data$Total.rooms)
 model <- lm(Total.rooms ~ Bedrooms, data)
-summary(carsregcoef)
 
 coeff = model$coefficients
 names(coeff) <- NULL
 multiple = coeff[2]
 multiple 
+
+
+estimation = data.frame(DCData$Total.rooms, DCData$Bedrooms, Total.rooms.estimation = NA) %>% mutate(Total.rooms.estimation = ifelse(!is.na(DCData.Total.rooms), DCData.Total.rooms,round(DCData.Bedrooms*multiple))) 
+
+#fill the rest in with the median
+
+medianOfTotal = median(estimation$Total.rooms.estimation[which(!is.na(estimation$Total.rooms.estimation))])
+
+estimation = estimation %>% mutate(Total.rooms.estimation = ifelse(is.na(Total.rooms.estimation), medianOfTotal,as.double(Total.rooms.estimation))) 
+
+DCData = cbind(DCData, "Total.rooms.estimation"= estimation[,3])
 ```
 
 
 ```{r}
-plot(data$Total.rooms,data$Bedrooms)
+plot(data$Bedrooms,data$Total.rooms)
 abline(model)
+hist(DCData$Total.rooms.estimation, breaks = 100)
 ```
 
 
@@ -98,7 +112,9 @@ abline(model)
 
 
 ```{r}
-save(dallasData, file = "cleanDallas.RData")
+cleanDC = DCData
+cleanDC
+save(cleanDC, file = "cleanDC.RData")
 ```
 
 

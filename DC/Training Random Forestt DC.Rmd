@@ -18,45 +18,51 @@ library(randomForest)
 Reading in file.
 
 ```{r}
-load(file = "cleanDallas.RData")
-dallasData
+load(file = "cleanDC.RData")
+cleanDC
 ```
 
 Removing areas with no information. 
 
 ```{r}
-dallasData <- dallasData %>% filter(location != "")
+cleanDC$location[cleanDC$location  == "dc"] <- ""
+cleanDC$location[cleanDC$location  == "virginia"] <- ""
+cleanDC$location[cleanDC$location  == "maryland"] <- ""
+cleanDC$location[cleanDC$location  == "se"] <- "southeast"
 ```
 
 Finding the top 50 labeled areas.
 
 ```{r}
-dallasData$location <- tolower(dallasData$location)
-tbl <- dallasData %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas <- tbl[1:24,]$location
+cleanDC$location <- tolower(cleanDC$location)
+tbl <- cleanDC %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+listOfAreas <- tbl[1:25,]$location
 listOfAreas
-save(listOfAreas, file = "AreasDallas.RData")
+save(listOfAreas, file = "AreasDC.RData")
 ```
 
 Find the observations with a top 50 area. 
 
 ```{r}
-dallasAddress <- dallasData %>% filter(Area %in% listOfAreas)
+DCTop <- DCData %>% filter(location %in% listOfAreas)
 
 #saving this file for the export dataset
-dallasAddress
+DCTop %>% group_by(location) %>% summarise(count = n())
 
-save(dallasAddress, file = "dallasTop.RData")
+save(DCTop, file = "DCTop.RData")
 ```
 
 
 This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
  
 ```{r}
-dallasAddress$location = as.factor(dallasAddress$location)
+load(file = "DCTop.RData")
 
-modelData <- dallasAddress 
-set.seed(343)
+DCTop$location = as.character(DCTop$location)
+DCTop$location = as.factor(DCTop$location)
+
+modelData <- DCTop 
+set.seed(344)
 shuf <- sample(nrow(modelData))
 modelData <- modelData[shuf,]
 train <- sample(nrow(modelData)*.8)
@@ -66,7 +72,7 @@ modelTest <- modelData[-train,]
 
 
 ```{r}
-bag <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice, data = modelTrain, ntree = 1000, importance = TRUE)
+bag <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice + Total.rooms.estimation, data = modelTrain, ntree = 1000, importance = TRUE)
 yhat.rf <- predict(bag, newdata = modelTest)
 misclassRate <- mean(yhat.rf != modelTest$location)
 misclassRate
@@ -82,9 +88,8 @@ register_google(key = k)
 
 
 ```{r} 
-map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+map <- get_map(location = 'DC', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
-
 ```
 
 
@@ -93,7 +98,7 @@ Full Model
 Using all the available data we construct a full model to use for the rest of the analysis. 
 
 ```{r}
-fullModel <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+fullModel <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice + Total.rooms.estimation, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
 ```
 
 
