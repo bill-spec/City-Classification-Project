@@ -15,10 +15,6 @@ library(ggmap)
 
 ```{r}
 load(file = "DC.RData")
-
-
-
-
 load(file = "DChandcheck.RData")
 ```
 
@@ -226,8 +222,8 @@ load(file = "allDC.RData")
 ```
 
 ```{r}
-geocodedDCFound <- geocodedAllDC %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
-geocodedDCReDo <- geocodedAllDC %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+geocodedDCFound <- geocodedAllDC %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
+geocodedDCReDo <- geocodedAllDC %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
 geocodedDCFound
 geocodedDCReDo
 ```
@@ -287,8 +283,8 @@ load(file = "full.RData")
 
 #full = full %>% mutate(latitude = latitude1) %>% mutate(longitude = longitude1) %>% select(-latitude1, -longitude1)
 
-found <- full %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
-notFound <- full %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+found <- full %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- full %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
 
 found
 notFound
@@ -359,8 +355,8 @@ save(DCSecondPassAddress, file = "DCSecondPassAddress.RData")
 
 ```{r}
 load(file = "DCSecondPassAddress.RData")
-found <- DCSecondPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
-notFound <- DCSecondPassAddress %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+found <- DCSecondPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- DCSecondPassAddress %>% filter(is.na(latitude) | !((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
 
 found
 notFound
@@ -430,8 +426,8 @@ save(DCSecondPassAddress, file = "DCSecondPassAddress.RData")
 
 ```{r}
 load(file = "DCSecondPassAddress.RData")
-found <- DCSecondPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
-notFound <- DCSecondPassAddress %>% filter( is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+found <- DCSecondPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- DCSecondPassAddress %>% filter( is.na(latitude) | !((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
 
 found
 save(notFound, file = "DCnotFound.RData")
@@ -505,8 +501,8 @@ save(DCThirdPassAddress, file = "DCThirdPassAddress.RData")
 
 ```{r}
 load(file = "DCThirdPassAddress.RData")
-found <- DCThirdPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
-notFound <- DCThirdPassAddress %>% filter( is.na(latitude) | !((latitude > 38.3 & latitude < 40.0) & (longitude > -78.35 & longitude < -76.30)) )
+found <- DCThirdPassAddress %>% filter(!is.na(latitude)) %>% filter( ((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
+notFound <- DCThirdPassAddress %>% filter( is.na(latitude) | !((latitude > 38.3 & latitude < 39.15) & (longitude > -78.35 & longitude < -76.30)) )
 
 found
 notFound

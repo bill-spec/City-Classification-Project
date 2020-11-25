@@ -33,7 +33,7 @@ Finding the top 50 labeled areas.
 ```{r}
 dallasData$location <- tolower(dallasData$location)
 tbl <- dallasData %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas <- tbl[1:24,]$location
+listOfAreas <- tbl[1:15,]$location
 listOfAreas
 save(listOfAreas, file = "AreasDallas.RData")
 ```
@@ -66,7 +66,7 @@ modelTest <- modelData[-train,]
 
 
 ```{r}
-bag <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice, data = modelTrain, ntree = 1000, importance = TRUE)
+bag <- randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelTrain, ntree = 1000, importance = TRUE)
 yhat.rf <- predict(bag, newdata = modelTest)
 misclassRate <- mean(yhat.rf != modelTest$location)
 misclassRate
@@ -93,7 +93,7 @@ Full Model
 Using all the available data we construct a full model to use for the rest of the analysis. 
 
 ```{r}
-fullModel <- randomForest(location ~ latitude + longitude + Year + capitalizedPrice, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+fullModel <- randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
 ```
 
 

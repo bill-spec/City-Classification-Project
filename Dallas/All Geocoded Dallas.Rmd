@@ -28,9 +28,9 @@ Dataset Specific preparation
 #Run in Open Street Map
 #House Number First
 #Then run the small location (if no small area then large area)
-#Then try the same thing through google
 
-#This is the final dataset
+#Then try the same thing through google because we can get better string cleaning
+
 
 ```{r}
 dallas$Area <- tolower(dallas$Area)
@@ -131,18 +131,21 @@ dallasGeocoded <- dallasGeocoded %>% mutate(location = case_when(
     str_detect(location, "suburban") ~ "",
     str_detect(location, "N NW Hwy") ~ "N NW Highway",
     str_detect(location, "n nw hwy, midway rd to central expwy") ~ "N NW Highway",
+    str_detect(location, "hwy") ~ "N NW Highway",
     str_detect(location, "N Northwest Hwy") ~ "N NW Highway",
     str_detect(location, "n nw hwy, w midway rd") ~ "N NW Highway",
     str_detect(location, "n of northwest highway") ~ "N NW Highway",
     str_detect(location, "n of nw hwy") ~ "N NW Highway",
     str_detect(location, "n nw hwy, e central expwy") ~ "N NW Highway",
-    str_detect(location, "n of lbj") ~ "n lbj",
-    str_detect(location, "n lbj, e addison, w richardson") ~ "n lbj",
+    str_detect(location, "n of lbj") ~ "North LBJ Freeway",
+    str_detect(location, "n lbj, e addison, w richardson") ~ "North LBJ Freeway",
     str_detect(location, "north of northwest highway") ~ "N NW Highway",
     str_detect(location, "oak cliff, w beckley") ~ "oak cliff",
     str_detect(location, "white rock lake - east") ~ "east white rock lake",
     str_detect(location, "e white rock lake") ~ "east white rock lake",
     str_detect(location, "e of white rock lake") ~ "east white rock lake",
+    str_detect(location, "highland park") ~ "highland park",
+    
     
     TRUE ~ location
     )
@@ -154,7 +157,7 @@ save(dallasGeocoded, file = "dallasGeocoded.RData")
 
 ```{r}
 load(file = "dallasGeocoded.RData")
-
+dallasGeocoded %>% filter(is.na(latitude))
 dallas2 = dallasGeocoded %>% filter(location != "")
 dallas2 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
 ```
@@ -163,7 +166,6 @@ dallas2 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
 register_google(key = k)
 ```
-
 
 
 ```{r} 

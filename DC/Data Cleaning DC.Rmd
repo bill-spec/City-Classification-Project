@@ -31,7 +31,8 @@ capitalizeRent <- function(dataFrame){
   dataFrame$capitalizedPrice <- ifelse( (!is.na(dataFrame$Sale.price) & (dataFrame$Sale.price != "") ), 
                                         dataFrame$Sale.price, 
                                         dataFrame$numericFrequency*dataFrame$cap*dataFrame$Rent.price)
-  dataFrame$capitalizedPrice <- round(dataFrame$capitalizedPrice,2)
+  
+  dataFrame$capitalizedPrice <- round(dataFrame$capitalizedPrice*dataFrame$dollars2015,2)
   return(dataFrame)
 }
 ```

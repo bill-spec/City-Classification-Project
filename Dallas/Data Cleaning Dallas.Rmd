@@ -66,23 +66,40 @@ dallasData$Column <- tolower(dallasData$Column)
 ```
 
 
-
-
+Creating a regression for total rooms calculation
 
 ```{r}
-data = dallas %>% filter(!is.na(Bedrooms)&!is.na(Total.rooms)&Bedrooms)
+
+dim(dallasData %>% filter(Total.rooms != ""))[1] #rows with total rooms
+dim(dallasData %>% filter(Bedrooms != ""))[1]    #rows with bedrooms
+
+data = dallasData %>% filter(Bedrooms != "" & Total.rooms != "") #obs with both for model
 
 plot(data$Bedrooms,data$Total.rooms)
-model <- lm(Bedrooms ~ Total.rooms, data)
-summary(model)
+model <- lm(Total.rooms ~ Bedrooms, data)
+
+coeff = model$coefficients
+names(coeff) <- NULL
+multiple = coeff[2]
+multiple 
+
+
+estimation = data.frame(dallasData$Total.rooms, dallasData$Bedrooms, Total.rooms.estimation = NA) %>% mutate(Total.rooms.estimation = ifelse(!is.na(dallasData.Total.rooms), dallasData.Total.rooms,round(dallasData.Bedrooms*multiple))) 
+
+#fill the rest in with the median
+
+medianOfTotal = median(estimation$Total.rooms.estimation[which(!is.na(estimation$Total.rooms.estimation))])
+
+estimation = estimation %>% mutate(Total.rooms.estimation = ifelse(is.na(Total.rooms.estimation), medianOfTotal,as.double(Total.rooms.estimation))) 
+
+dallasData = cbind(dallasData, "Total.rooms.estimation"= estimation[,3])
 ```
 
 
 ```{r}
-plot(data$Total.rooms,data$Bedrooms)
+plot(data$Bedrooms,data$Total.rooms)
 abline(model)
 ```
-
 
 
 
@@ -92,5 +109,8 @@ abline(model)
 save(dallasData, file = "cleanDallas.RData")
 ```
 
+```{r}
+
+```
 
 
