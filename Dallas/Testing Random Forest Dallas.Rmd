@@ -45,11 +45,29 @@ save(predicted, file = "predicctedBoston.RData")
 
 ```{r}
 map <- get_map(location = 'Dallas', zoom = 10 , maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = .1)+ theme(legend.position = "none")
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = .1)+ theme(legend.position = "none")
 ```
 
 
 
+
+Testing just by lat and long
+
+```{r}
+yhat.rf <- predict(fullModelLocation, newdata = dallasDataAddress)
+predicted <- cbind(dallasDataAddress,yhat.rf)
+predicted <- predicted %>% mutate(calculatedColumn = yhat.rf) %>% select(-yhat.rf)
+predicted
+
+#Saving for the predicted file
+save(predicted, file = "predicctedBoston.RData")
+```
+
+
+```{r}
+map <- get_map(location = 'Dallas', zoom = 10 , maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = .1)+ theme(legend.position = "none")
+```
 
 
 

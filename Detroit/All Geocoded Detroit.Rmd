@@ -4,6 +4,12 @@ author: "Bill Lang"
 date: "10/21/2020"
 output: html_document
 ---
+---
+title: "All Geocoded Dallas"
+author: "Bill Lang"
+date: "10/14/2020"
+output: html_document
+---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -11,120 +17,196 @@ library(tidyverse)
 library(ggmap)
 ```
 
+
 ```{r}
-load(file = "Dallas.RData")
-dallas
+load(file = "Detroit.RData")
+detroit
 
-dallas %>% filter(Area != "")
-dallas %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
-dallas %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+detroit %>% filter(Area != "")
+detroit %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
+detroit %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+detroit %>% filter(Street != "")
 
-#35000 with and 65459 without area, Column.Loation has just Dallas
+#24433 with and 53655 without area, Column.Loation has just Dallas
+#34,355 full address, 59,447 with street
 ```
-
 
 Dataset Specific preparation
 
+Run in Open Street Map
+House Number First
+Then run the small location (if no small area then large area)
+
 ```{r}
-dallas$Area <- tolower(dallas$Area)
-dallas$Column.Location <- tolower(dallas$Column.Location)
-dallas$Street <- tolower(dallas$Street)
+detroit$Area <- tolower(detroit$Area)
+detroit$Column.Location <- tolower(detroit$Column.Location)
+detroit$Street <- tolower(detroit$Street)
 
 
-dallas <- dallas %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column.Location))) %>%   mutate(location = case_when(
-    str_detect(location, "n dallas") ~ "north dallas",
-    str_detect(location, "e dallas") ~ "east dallas",
-    str_detect(location, "dallas") ~ "",
-    str_detect(location, "suburban") ~ "",
-    str_detect(location, "N NW Hwy") ~ "N NW Highway",
-    str_detect(location, "N NW Hwy") ~ "N NW Highway",
-    str_detect(location, "N Northwest Hwy") ~ "N NW Highway",
-    TRUE ~ location
-    )
-  )
-dallas %>% filter(location != "")
-#52371 not blank area
+detroit <- detroit %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column.Location))) %>% mutate(location = str_replace_all(location, "detroit", "")) %>% 
+  mutate(location = str_replace_all(location, "detriot", ""))
 
-dallas <- dallas %>% unite(Address, c("Hse.No","Street", "location"), sep = " ",remove = FALSE)
-dallas$Address <- paste(dallas$Address, ", Dallas")
-dallas$Address <- trimws(dallas$Address)
-dallas$Address <- sapply(dallas$Address, function(x) gsub("#", "", x))
-dallas$Address <- sapply(dallas$Address, function(x) gsub("near", "", x))
+detroit %>% filter(location != "")
+#28,064 not blank location
 
+
+#We can build the addres column to geocode
+
+detroit <- detroit %>% unite(Address, c("Hse.No","Street", "location"), sep = " ",remove = FALSE)
+detroit$Address <- paste(detroit$Address, ", Detroit")
+detroit$Address <- trimws(detroit$Address)
+
+detroit = detroit %>% 
+  mutate(Address = str_replace_all(Address, "#", "")) %>% 
+  mutate(Address = str_replace_all(Address, "[.]"," ")) %>%
+  mutate(Address = str_replace_all(Address, " ne ", " northeast ")) %>% 
+  mutate(Address = str_replace_all(Address, "#ref!", "")) %>% 
+  mutate(Address = str_replace_all(Address, " se "," southeast ")) %>% 
+  mutate(Address = str_replace_all(Address, " sw "," southwest ")) %>% 
+  mutate(Address = str_replace_all(Address, " nw ", " northwest ")) %>% 
+  mutate(Address = str_replace_all(Address, "ny","new york")) %>% 
+  mutate(Address = str_replace_all(Address, "n y", "new york") ) %>% 
+  mutate(Address = str_replace_all(Address, "mass ","massachusetts ")) %>% 
+  mutate(Address = str_replace_all(Address, "conn ","connecticut ") ) %>% 
+  mutate(Address = str_replace_all(Address, " rd "," road ")) %>% 
+  mutate(Address = str_replace_all(Address, " ave "," avenue ")) %>% 
+  mutate(Address = str_replace_all(Address, " st "," street ")) %>% 
+  mutate(Address = str_replace_all(Address, " ct "," court ")) %>%
+  mutate(Address = str_replace_all(Address, " pl "," place ") ) %>%
+  mutate(Address = str_replace_all(Address, " rd,"," road,")) %>% 
+  mutate(Address = str_replace_all(Address, " ave,"," avenue,")) %>% 
+  mutate(Address = str_replace_all(Address, " st,"," street,")) %>% 
+  mutate(Address = str_replace_all(Address, " ct,"," court,")) %>%
+  mutate(Address = str_replace_all(Address, " pl,"," place,") ) %>%
+  mutate(Address = str_replace_all(Address, "americana","american") ) %>%
+  mutate(Address = str_replace_all(Address, "near",""))
+detroit
 ```
-
 
 Starting off with the first address set
 
 ```{r}
-#geocodedAllDallas <- tidygeocoder::geocode(.tbl = dallas, address = Address, method = "osm", lat = latitude, long = longitude)
-#geocodedAllDallas
-#save(geocodedAllDallas, file = "allDallas.RData")
-geocodedAllDallas %>% filter(!is.na(latitude))
+geocodedAllDetroit <- tidygeocoder::geocode(.tbl = detroit, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodedAllDetroit
+save(geocodedAllDetroit, file = "allDetroit.RData")
+
+geocodedAllDetroit %>% filter(!is.na(latitude))
 ```
 
 ```{r}
-load(file = "allDallas.RData")
+load(file = "allDetroit.RData")
+geocodedAllDetroit
 ```
 
 ```{r}
-geocodedDallasFound <- geocodedAllDallas %>% filter(!is.na(latitude)) %>% filter( ((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
-geocodedDallasReDo <- geocodedAllDallas %>% filter(is.na(latitude) | !((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
-geocodedDallasReDo
-geocodedDallasFound 
+geocodedDetroitFound <- geocodedAllDetroit %>% filter(!is.na(latitude)) %>% filter( ((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
+geocodedDetroitReDo <- geocodedAllDetroit %>% filter(is.na(latitude) | !((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
+geocodedDetroitReDo
+geocodedDetroitFound 
 ```
 
-Now we geocode the set that we did not find 'geocodedLAReDo'. I use a google maps quote for this specifically, to get the best results. Google's system works far better for interpreting ambiguous inputs.
+
+We redo the geocoding with a new address for each by removing the "location" data that was put in before.
 
 ```{r}
-geocodedDallasReDo <- geocodedDallasReDo %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
-geocodedDallasReDo$Address <- paste(geocodedDallasReDo$Address, ",Dallas, Texas") 
-geocodedDallasReDo <- geocodedDallasReDo %>% select(-latitude, -longitude)
-geocodedDallasReDo
+geocodedDetroitReDo <- geocodedDetroitReDo %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
+geocodedDetroitReDo$Address <- paste(geocodedDetroitReDo$Address, ",Detroit") 
+geocodedDetroitReDo <- geocodedDetroitReDo %>% select(-latitude, -longitude)
+geocodedDetroitReDo
 ```
+
+```{r}
+secondDetroit <- tidygeocoder::geocode(.tbl = geocodedDetroitReDo, address = Address, method = "osm", lat = latitude, long = longitude)
+secondDetroit
+save(secondDetroit, file = "secondDetroit.RData")
+secondDetroit %>% filter(!is.na(latitude))
+```
+
+```{r}
+load(file = "secondDetroit.RData")
+secondDetroit
+```
+
+```{r}
+geocodedDetroitFound2 <- secondDetroit %>% filter(!is.na(latitude)) %>% filter( ((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
+geocodedDetroitReDo2 <- secondDetroit %>% filter(is.na(latitude) | !((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
+geocodedDetroitReDo2
+geocodedDetroitFound2
+```
+
+Add the newly found rows into the entire dataset
+
+```{r}
+detroitGeocoded <- rbind(geocodedDetroitFound, geocodedDetroitFound2)
+detroitGeocoded
+```
+
+```{r}
+geocodedDetroitReDo2
+```
+
+
+
+
+We redo the geocoding with a new address for each by removing the "location" data that was put in before.
+
+```{r}
+geocodedDetroitReDo2 <- geocodedDetroitReDo2 %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
+geocodedDetroitReDo2$Address <- paste(geocodedDetroitReDo2$Address, ",Michigan") 
+geocodedDetroitReDo2 <- geocodedDetroitReDo2 %>% select(-latitude, -longitude)
+geocodedDetroitReDo2
+```
+
+```{r}
+thirdDetroit <- tidygeocoder::geocode(.tbl = geocodedDetroitReDo2, address = Address, method = "osm", lat = latitude, long = longitude)
+thirdDetroit
+save(thirdDetroit, file = "thirdDetroit.RData")
+secondDetroit %>% filter(!is.na(latitude))
+```
+
+```{r}
+load(file = "thirdDetroit.RData")
+thirdDetroit
+```
+
+```{r}
+geocodedDetroitFound3 <- thirdDetroit %>% filter(!is.na(latitude)) %>% filter( ((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
+geocodedDetroitReDo3 <- thirdDetroit %>% filter(is.na(latitude) | !((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
+geocodedDetroitReDo3
+geocodedDetroitFound3
+```
+
+Add the newly found rows into the entire dataset
+
+```{r}
+detroitGeocoded <- rbind(detroitGeocoded, geocodedDetroitFound3)
+detroitGeocoded
+```
+
+```{r}
+geocodedDetroitReDo3
+```
+
+```{r}
+detroitGeocoded <- rbind(detroitGeocoded, geocodedDetroitReDo3)
+detroitGeocoded
+```
+
+```{r}
+save(detroitGeocoded, file = "detroitGeocoded.RData")
+```
+
+
 
 ```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
 register_google(key = k)
 ```
-
-```{r}
-#SecondDallas <- ggmap::mutate_geocode(geocodedDallasReDo, Address)
-#save(SecondDallas, file = "SecondDallas.RData")
-```
-
-
-```{r}
-load(file = "secondDallas.RData")
-SecondDallas <- SecondDallas %>% mutate(latitude = lat) %>% mutate(longitude = lon) %>% select(-lat,-lon)
-
-```
-
-Bring the entire dataset back together.
-
-```{r}
-dallasGeocoded <- rbind(geocodedDallasFound, SecondDallas)
-save(dallasGeocoded, file = "dallasGeocoded.RData")
-```
-
-
-```{r}
-load(file = "dallasGeocoded.RData")
-
-dallas2 = dallasGeocoded %>% filter(location != "")
-dallas2 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
-```
-
-```{r}
-k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
-register_google(key = k)
-```
-
 
 
 ```{r} 
-map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = dallas2, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+map <- get_map(location = 'Detroit', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = geocodedAllDetroit, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
 
 ```
 

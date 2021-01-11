@@ -98,9 +98,12 @@ fullModel <- randomForest(location ~ latitude + longitude + Year +Total.rooms.es
 
 
 
+location only
 
 
-
+```{r}
+fullModelLocation <- randomForest(location ~ latitude + longitude, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+```
 
 
 
