@@ -41,18 +41,19 @@ save(listOfAreas, file = "AreasDallas.RData")
 Find the observations with a top 50 area. 
 
 ```{r}
-dallasAddress <- dallasData %>% filter(Area %in% listOfAreas)
+dallasAddress <- dallasData %>% filter(location %in% listOfAreas)
 
 #saving this file for the export dataset
-dallasAddress
 
-save(dallasAddress, file = "dallasTop.RData")
+dallasTop = dallasAddress
+save(dallasTop, file = "dallasTop.RData")
 ```
 
 
 This model is built on a random shuffle of the data and validated by holding out 20% of the dataset. 
  
 ```{r}
+
 dallasAddress$location = as.factor(dallasAddress$location)
 
 modelData <- dallasAddress 
@@ -62,6 +63,8 @@ modelData <- modelData[shuf,]
 train <- sample(nrow(modelData)*.8)
 modelTrain <- modelData[train,]
 modelTest <- modelData[-train,]
+str(modelTrain)
+modelTrain %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
 ```
 
 
@@ -83,7 +86,7 @@ register_google(key = k)
 
 ```{r} 
 map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) #+ theme(legend.position = "none")
 
 ```
 
@@ -98,7 +101,7 @@ fullModel <- randomForest(location ~ latitude + longitude + Year +Total.rooms.es
 
 
 
-location only
+Lat, Long only
 
 
 ```{r}

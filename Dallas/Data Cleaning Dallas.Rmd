@@ -38,7 +38,7 @@ capitalizeRent <- function(dataFrame){
 Cleaning the Dataset. Pulling in an already Geocoded Dataset.
 
 ```{r}
-load(file = "dallasGeocoded.RData")
+load(file = "dallasGeocoded2.RData")
 dallasGeocoded
 ```
 
@@ -102,15 +102,11 @@ abline(model)
 ```
 
 
-
-
-
 ```{r}
+dallasData = dallasData %>% filter(!is.na(latitude))%>% filter(!is.na(longitude))
+
 save(dallasData, file = "cleanDallas.RData")
 ```
 
-```{r}
-
-```
 
 

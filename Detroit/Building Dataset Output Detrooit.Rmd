@@ -1,0 +1,115 @@
+---
+title: "Building Dataset Output Dallas"
+author: "Bill Lang"
+date: "10/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+Load in the rows that already had a top area
+
+```{r}
+load(file = "DCTop.RData")
+DCTop = DCTop %>% mutate(calculatedColumn = location)
+```
+
+Load in the rows we predicted
+
+```{r}
+load(file = "predicctedDC.RData")
+predicted
+```
+
+Load in the rows we could not geocode
+
+```{r}
+load("DCnotFound.RData")
+notFound
+```
+
+
+```{r}
+notFound = notFound %>% select(-Address1) %>% select(ï..Transcriber:Area,Hse.No:location,Address,latitude,longitude)
+
+notFound
+```
+
+
+Capitalize the Rent. Replace few NAs with the median
+
+```{r}
+notFound <- capitalizeRent(notFound)
+notFound$capitalizedPrice[is.na(notFound$capitalizedPrice)] = median(notFound$capitalizedPrice[!is.na(notFound$capitalizedPrice)])
+notFound %>% filter(is.na(capitalizedPrice))
+```
+
+Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 
+
+```{r}
+notFound$location <- as.factor(notFound$location)
+
+notFound$Price.type <- tolower(notFound$Price.type)
+notFound$Price.type <- gsub('income', 'rent', notFound$Price.type)
+notFound$Price.type <- as.factor(notFound$Price.type)
+
+notFound$Type <- tolower(notFound$Type)
+notFound$Type <- as.factor(notFound$Type)
+
+notFound$Column <- tolower(notFound$Column)
+```
+
+
+Creating a regression for total rooms calculation
+
+```{r}
+
+dim(notFound %>% filter(Total.rooms != ""))[1] #rows with total rooms
+dim(notFound %>% filter(Bedrooms != ""))[1]    #rows with bedrooms
+
+data = notFound %>% filter(Bedrooms != "" & Total.rooms != "") #obs with both for model
+
+plot(data$Bedrooms,data$Total.rooms)
+model <- lm(Total.rooms ~ Bedrooms, data)
+
+coeff = model$coefficients
+names(coeff) <- NULL
+multiple = coeff[2]
+multiple 
+
+
+estimation = data.frame(notFound$Total.rooms, notFound$Bedrooms, Total.rooms.estimation = NA) %>% mutate(Total.rooms.estimation = ifelse(!is.na(notFound.Total.rooms), notFound.Total.rooms,round(notFound.Bedrooms*multiple))) 
+
+#fill the rest in with the median
+
+medianOfTotal = median(estimation$Total.rooms.estimation[which(!is.na(estimation$Total.rooms.estimation))])
+
+estimation = estimation %>% mutate(Total.rooms.estimation = ifelse(is.na(Total.rooms.estimation), medianOfTotal,as.double(Total.rooms.estimation))) 
+
+notFound = cbind(notFound, "Total.rooms.estimation"= estimation[,3])
+notFound = notFound %>% add_column(calculatedColumn = "")
+```
+
+
+
+
+```{r}
+DCTop
+predicted
+notFound
+DCExport = rbind(DCTop,predicted, notFound)
+DCExport
+
+
+hist(DCExport[!is.na(DCExport$latitude),]$Year)
+hist(DCData$Year)
+```
+
+```{r}
+write.csv(DCExport, file = "C:/Users/the36/Desktop/DataRA/RExports/DCExport.csv",row.names=FALSE)
+
+```
+

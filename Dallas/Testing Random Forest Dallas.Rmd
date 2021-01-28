@@ -17,17 +17,18 @@ Next we can take the 37,506 observations that aren't inside the top 50 regions, 
 
 ```{r}
 load(file = "cleanDallas.RData")
-dallasData
+#dallasData
 ```
 
 ```{r}
-dallasDataAddress <- dallasData %>% filter(!(Area %in% listOfAreas))
-dallasDataAddress 
+load(file = "AreasDallas.RData")
+dallasDataAddress <- dallasData %>% filter(!(location %in% listOfAreas))
+#dallasDataAddress 
 ```
 
 ```{r}
 dallasDataAddress <- dallasDataAddress %>% filter(!is.na(latitude))
-dallasDataAddress
+#dallasDataAddress
 ```
 
 Predict the data using the previous model and map the results for validation. 
@@ -39,13 +40,14 @@ predicted <- predicted %>% mutate(calculatedColumn = yhat.rf) %>% select(-yhat.r
 predicted
 
 #Saving for the predicted file
-save(predicted, file = "predicctedBoston.RData")
+save(predicted, file = "predictedDallas.RData")
 ```
 
 
 ```{r}
 map <- get_map(location = 'Dallas', zoom = 10 , maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = .1)+ theme(legend.position = "none")
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = 1)#+ theme(legend.position = "none")
+
 ```
 
 
@@ -66,7 +68,7 @@ save(predicted, file = "predicctedBoston.RData")
 
 ```{r}
 map <- get_map(location = 'Dallas', zoom = 10 , maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = .1)+ theme(legend.position = "none")
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = .1)#+ theme(legend.position = "none")
 ```
 
 

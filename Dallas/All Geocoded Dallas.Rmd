@@ -91,7 +91,7 @@ geocodedDallasReDo
 geocodedDallasFound 
 ```
 
-Now we geocode the set that we did not find 'geocodedLAReDo'. I use a google maps quote for this specifically, to get the best results. Google's system works far better for interpreting ambiguous inputs.
+Now we geocode the set that we did not find 'geocodedDallasReDo'. I use a google maps quote for this specifically, to get the best results. Google's system works far better for interpreting ambiguous inputs.
 
 ```{r}
 geocodedDallasReDo <- geocodedDallasReDo %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
@@ -157,10 +157,27 @@ save(dallasGeocoded, file = "dallasGeocoded.RData")
 
 ```{r}
 load(file = "dallasGeocoded.RData")
-dallasGeocoded %>% filter(is.na(latitude))
+dallasGeocoded %>% filter(is.na(longitude))
+dallasGeocoded
+
+geocodedDallasFound <- dallasGeocoded %>% filter(!is.na(latitude)) %>% filter( ((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
+geocodedDallasNotFound <- dallasGeocoded %>% filter(is.na(latitude) | !((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
+geocodedDallasFound
+
+dallasGeocoded = geocodedDallasFound
+```
+
+```{r}
+save(dallasGeocoded, file = "dallasGeocoded2.RData")
+save(geocodedDallasNotFound, file = "dallasGeocodedNotFound.RDa")
+```
+
+
+```{r}
 dallas2 = dallasGeocoded %>% filter(location != "")
 dallas2 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
 ```
+
 
 ```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
@@ -169,7 +186,7 @@ register_google(key = k)
 
 
 ```{r} 
-map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+map <- get_map(location = 'Dallas', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = dallas2, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
 
 ```
