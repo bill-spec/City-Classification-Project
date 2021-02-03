@@ -4,12 +4,7 @@ author: "Bill Lang"
 date: "10/21/2020"
 output: html_document
 ---
----
-title: "All Geocoded Dallas"
-author: "Bill Lang"
-date: "10/14/2020"
-output: html_document
----
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -43,7 +38,7 @@ detroit$Column.Location <- tolower(detroit$Column.Location)
 detroit$Street <- tolower(detroit$Street)
 
 
-detroit <- detroit %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column.Location))) %>% mutate(location = str_replace_all(location, "detroit", "")) %>% 
+detroit <- detroit %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column.Location))) %>% mutate(location = str_replace_all(location, "detroit", "")) %>%
   mutate(location = str_replace_all(location, "detriot", ""))
 
 detroit %>% filter(location != "")
@@ -105,7 +100,6 @@ geocodedDetroitReDo
 geocodedDetroitFound 
 ```
 
-
 We redo the geocoding with a new address for each by removing the "location" data that was put in before.
 
 ```{r}
@@ -144,7 +138,6 @@ detroitGeocoded
 ```{r}
 geocodedDetroitReDo2
 ```
-
 
 
 
