@@ -69,7 +69,6 @@ detroitData$Type <- as.factor(detroitData$Type)
 detroitData$Column <- tolower(detroitData$Column)
 ```
 
-
 Creating a regression for total rooms calculation
 
 ```{r}
