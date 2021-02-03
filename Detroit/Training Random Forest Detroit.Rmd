@@ -27,7 +27,7 @@ Finding the top 15 labeled areas.
 
 ```{r}
 cleanDetroit$location <- tolower(cleanDetroit$location)
-tbl <- cleanDetroit %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
+tbl <- cleanDetroit %>% filter(!( (latitude > 42.30 & latitude < 42.4)  & (longitude < -83.0 & longitude > -83.1)) ) %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
 listOfAreas <- tbl[1:15,]$location
 listOfAreas
 save(listOfAreas, file = "AreasDetroit.RData")
@@ -36,7 +36,7 @@ save(listOfAreas, file = "AreasDetroit.RData")
 Find the observations with a top 50 area. 
 
 ```{r}
-detroitAddress <- cleanDetroit %>% filter(location %in% listOfAreas)
+detroitAddress <- cleanDetroit %>% filter(location %in% listOfAreas) %>% filter(!( (latitude > 42.30 & latitude < 42.4)  & (longitude < -83.0 & longitude > -83.1)) )
 
 #saving this file for the export dataset
 detroitAddress
@@ -78,7 +78,7 @@ register_google(key = k)
 
 
 ```{r} 
-map <- get_map(location = 'Detroit', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+map <- get_map(location = 'Detroit', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
 ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 1) #+ theme(legend.position = "none")
 
 ```
@@ -94,7 +94,7 @@ fullModel <- randomForest(location ~ latitude + longitude + Year +Total.rooms.es
 
 
 
-location only
+Location only
 
 
 ```{r}

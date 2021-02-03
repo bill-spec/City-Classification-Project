@@ -112,11 +112,11 @@ dallasExport
 
 
 ```{r}
-
+dallasExport = rbind(dallasExport,geocodedDallasNotFound)
 ```
 
 ```{r}
-write.csv(DCExport, file = "C:/Users/the36/Desktop/DataRA/RExports/DallasExport.csv",row.names=FALSE)
+write.csv(dallasExport, file = "C:/Users/the36/Desktop/DataRA/RExports/DallasExport.csv",row.names=FALSE)
 
 ```
 

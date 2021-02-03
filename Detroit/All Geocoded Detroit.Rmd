@@ -130,8 +130,8 @@ secondDetroit
 ```{r}
 geocodedDetroitFound2 <- secondDetroit %>% filter(!is.na(latitude)) %>% filter( ((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
 geocodedDetroitReDo2 <- secondDetroit %>% filter(is.na(latitude) | !((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
-geocodedDetroitReDo2
 geocodedDetroitFound2
+geocodedDetroitReDo2
 ```
 
 Add the newly found rows into the entire dataset
@@ -184,12 +184,9 @@ detroitGeocoded
 ```
 
 ```{r}
-geocodedDetroitReDo3
-```
-
-```{r}
-detroitGeocoded <- rbind(detroitGeocoded, geocodedDetroitReDo3)
-detroitGeocoded
+notGeocoded = geocodedDetroitReDo3
+notGeocoded
+save(notGeocoded, file = "notGeocoded.RData")
 ```
 
 ```{r}
@@ -206,7 +203,6 @@ register_google(key = k)
 
 ```{r} 
 map <- get_map(location = 'Detroit', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = geocodedAllDetroit, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
-
+ggmap(map) + geom_point(data = detroitGeocoded, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
 ```
 

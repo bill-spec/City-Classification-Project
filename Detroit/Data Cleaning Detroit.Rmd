@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(ggmap)
 ```
 
 Capitalization Function 
@@ -107,17 +108,7 @@ hist(detroitData$Total.rooms.estimation, breaks = 100)
 
 
 
-
-
 Removing areas with no information. 
-
-
-```{r} 
-#map <- get_map(location = 'Detroit', zoom = 11, maptype = "terrain-background", source = 'google', color = 'color')
-#ggmap(map) + geom_point(data = detroitData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 1) + theme(legend.position = "none")
-
-```
-
 
 ```{r}
 detroitData
@@ -125,7 +116,8 @@ detroitData <- detroitData %>% filter(longitude != "")
 detroitData <- detroitData %>% filter(latitude != "")
 detroitData
 
-detroitData <- detroitData %>% filter(! (latitude < 42.4 & latitude > 42.35 & longitude > -83.0 & longitude < -83.1) )
+test = detroitData %>% filter(!( (latitude > 42.30 & latitude < 42.4)  & (longitude < -83.0 & longitude > -83.1)) )
+test
 detroitData
 
 ```
@@ -136,5 +128,23 @@ cleanDetroit
 save(cleanDetroit, file = "cleanDetroit.RData")
 ```
 
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r} 
+map <- get_map(location = 'Detroit', zoom = 7, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = test, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 1) + theme(legend.position = "none")
+
+```
+
+
+
+```{r}
+
+```
 
 
