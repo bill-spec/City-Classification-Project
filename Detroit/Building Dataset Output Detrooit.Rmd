@@ -13,62 +13,62 @@ library(tidyverse)
 Load in the rows that already had a top area
 
 ```{r}
-load(file = "dallasTop.RData")
-dallasTop = dallasTop %>% mutate(calculatedColumn = location)
-dallasTop
+load(file = "DetroitTop.RData")
+detroitTop = detroitAddress %>% mutate(calculatedColumn = location)
+detroitTop
 ```
 
 Load in the rows we predicted
 
 ```{r}
-load(file = "predictedDallas.RData")
+load(file = "predictedDetroit.RData")
 predicted
 ```
 
 ```{r}
-dallasExport = rbind(dallasTop,predicted)
-dallasExport = dallasExport %>% select(-c(X,X.1))
-dallasExport = dallasExport %>% select(ï..Transciber:Area,Hse.No:location,Address,latitude:calculatedColumn)
-dallasExport
+detroitExport = rbind(detroitTop,predicted)
+detroitExport = detroitExport %>% select(-c(X,X.1))
+detroitExport = detroitExport %>% select(ï..Transciber:Area,Hse.No:location,Address,latitude:calculatedColumn)
+detroitExport
 ``` 
-
 
 
 Load in the rows we could not geocode
 
 ```{r}
-load(file = "dallasGeocodedNotFound.RDa")
-geocodedDallasNotFound = geocodedDallasNotFound %>% select(-c(X,X.1))
+load(file = "notGeocoded.RData")
+notGeocoded = notGeocoded %>% select(-c(X,X.1))
 ```
 
 
 ```{r}
-geocodedDallasNotFound = geocodedDallasNotFound %>% select(ï..Transciber:Area,Hse.No:location,Address,latitude,longitude)
-geocodedDallasNotFound
+notGeocoded = notGeocoded %>% select(ï..Transciber:Area,Hse.No:location,Address,latitude,longitude)
+notGeocoded
 ```
 
 
 Capitalize the Rent. Replace few NAs with the median
 
 ```{r}
-geocodedDallasNotFound <- capitalizeRent(geocodedDallasNotFound)
-geocodedDallasNotFound$capitalizedPrice[is.na(geocodedDallasNotFound$capitalizedPrice)] = median(geocodedDallasNotFound$capitalizedPrice[!is.na(geocodedDallasNotFound$capitalizedPrice)])
-geocodedDallasNotFound %>% filter(is.na(capitalizedPrice))
+notGeocoded <- capitalizeRent(notGeocoded)
+notGeocoded$capitalizedPrice[is.na(notGeocoded$capitalizedPrice)] = median(notGeocoded$capitalizedPrice[!is.na(notGeocoded$capitalizedPrice)])
+#This output should be NA
+notGeocoded %>% filter(is.na(capitalizedPrice))
 ```
 
 Fix columns that will be used in a model. Standardizing the case, setting factors, etc. 
 
 ```{r}
-geocodedDallasNotFound$location <- as.factor(geocodedDallasNotFound$location)
+notGeocoded$location <- as.factor(notGeocoded$location)
 
-geocodedDallasNotFound$Price.type <- tolower(geocodedDallasNotFound$Price.type)
-geocodedDallasNotFound$Price.type <- gsub('income', 'rent', geocodedDallasNotFound$Price.type)
-geocodedDallasNotFound$Price.type <- as.factor(geocodedDallasNotFound$Price.type)
+notGeocoded$Price.type <- tolower(notGeocoded$Price.type)
+notGeocoded$Price.type <- gsub('income', 'rent', notGeocoded$Price.type)
+notGeocoded$Price.type <- as.factor(notGeocoded$Price.type)
 
-geocodedDallasNotFound$Type <- tolower(geocodedDallasNotFound$Type)
-geocodedDallasNotFound$Type <- as.factor(geocodedDallasNotFound$Type)
+notGeocoded$Type <- tolower(notGeocoded$Type)
+notGeocoded$Type <- as.factor(notGeocoded$Type)
 
-geocodedDallasNotFound$Column <- tolower(geocodedDallasNotFound$Column)
+notGeocoded$Column <- tolower(notGeocoded$Column)
 ```
 
 
@@ -76,10 +76,10 @@ Creating a regression for total rooms calculation
 
 ```{r}
 
-dim(geocodedDallasNotFound %>% filter(Total.rooms != ""))[1] #rows with total rooms
-dim(geocodedDallasNotFound %>% filter(Bedrooms != ""))[1]    #rows with bedrooms
+dim(notGeocoded %>% filter(Total.rooms != ""))[1] #rows with total rooms
+dim(notGeocoded %>% filter(Bedrooms != ""))[1]    #rows with bedrooms
 
-data = geocodedDallasNotFound %>% filter(Bedrooms != "" & Total.rooms != "") #obs with both for model
+data = notGeocoded %>% filter(Bedrooms != "" & Total.rooms != "") #obs with both for model
 
 plot(data$Bedrooms,data$Total.rooms)
 model <- lm(Total.rooms ~ Bedrooms, data)
@@ -90,7 +90,7 @@ multiple = coeff[2]
 multiple 
 
 
-estimation = data.frame(geocodedDallasNotFound$Total.rooms, geocodedDallasNotFound$Bedrooms, Total.rooms.estimation = NA) %>% mutate(Total.rooms.estimation = ifelse(!is.na(geocodedDallasNotFound.Total.rooms), geocodedDallasNotFound.Total.rooms,round(geocodedDallasNotFound.Bedrooms*multiple))) 
+estimation = data.frame(notGeocoded$Total.rooms, notGeocoded$Bedrooms, Total.rooms.estimation = NA) %>% mutate(Total.rooms.estimation = ifelse(!is.na(notGeocoded.Total.rooms), notGeocoded.Total.rooms,round(notGeocoded.Bedrooms*multiple))) 
 
 #fill the rest in with the median
 
@@ -98,25 +98,18 @@ medianOfTotal = median(estimation$Total.rooms.estimation[which(!is.na(estimation
 
 estimation = estimation %>% mutate(Total.rooms.estimation = ifelse(is.na(Total.rooms.estimation), medianOfTotal,as.double(Total.rooms.estimation))) 
 
-geocodedDallasNotFound = cbind(geocodedDallasNotFound, "Total.rooms.estimation"= estimation[,3])
-geocodedDallasNotFound = geocodedDallasNotFound %>% add_column(calculatedColumn = "")
-```
-
-add the google column
-
-```{r}
-geocodedDallasNotFound = geocodedDallasNotFound %>% mutate(google = 0)
-geocodedDallasNotFound = geocodedDallasNotFound %>% select(ï..Transciber:longitude,google,numericFrequency:calculatedColumn)
-dallasExport 
+notGeocoded = cbind(notGeocoded, "Total.rooms.estimation"= estimation[,3])
+notGeocoded = notGeocoded %>% add_column(calculatedColumn = "")
 ```
 
 
 ```{r}
-dallasExport = rbind(dallasExport,geocodedDallasNotFound)
+detroitExport = rbind(detroitExport,notGeocoded)
 ```
 
 ```{r}
-write.csv(dallasExport, file = "C:/Users/the36/Desktop/DataRA/RExports/DallasExport.csv",row.names=FALSE)
-
+detroitExport
+save(detroitExport, file = "detroitExport.RData")
+write.csv(detroitExport, file = "C:/Users/the36/Desktop/DataRA/RExports/DetroitExport.csv",row.names=FALSE)
 ```
 
