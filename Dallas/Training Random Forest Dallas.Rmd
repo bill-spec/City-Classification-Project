@@ -22,18 +22,34 @@ load(file = "cleanDallas.RData")
 dallasData
 ```
 
-Removing areas with no information. 
+
 
 ```{r}
-dallasData <- dallasData %>% filter(location != "")
+##############
+
+
+v = c('','hello')
+x = c(1,2)
+t = c('hello','candy')
+
+frame = as.data.frame(cbind(v,x))
+
+frame$v = as.character(v)
+frame
+
+
+frame %>% filter(v %in% t)
+
 ```
+
+
 
 Finding the top 50 labeled areas.
 
 ```{r}
 dallasData$location <- tolower(dallasData$location)
 tbl <- dallasData %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas <- tbl[1:15,]$location
+listOfAreas <- tbl[2:16,]$location  #This is 2-16 because the first location area is "" (blank)
 listOfAreas
 save(listOfAreas, file = "AreasDallas.RData")
 ```
@@ -41,11 +57,11 @@ save(listOfAreas, file = "AreasDallas.RData")
 Find the observations with a top 50 area. 
 
 ```{r}
-dallasAddress <- dallasData %>% filter(location %in% listOfAreas)
+dallasTop <- dallasData %>% filter(location %in% listOfAreas)
 
 #saving this file for the export dataset
 
-dallasTop = dallasAddress
+dallasTop
 save(dallasTop, file = "dallasTop.RData")
 ```
 
@@ -54,17 +70,16 @@ This model is built on a random shuffle of the data and validated by holding out
  
 ```{r}
 
-dallasAddress$location = as.factor(dallasAddress$location)
+dallasTop$location = as.factor(dallasTop$location)
 
-modelData <- dallasAddress 
+modelData <- dallasTop 
 set.seed(343)
 shuf <- sample(nrow(modelData))
 modelData <- modelData[shuf,]
 train <- sample(nrow(modelData)*.8)
 modelTrain <- modelData[train,]
 modelTest <- modelData[-train,]
-str(modelTrain)
-modelTrain %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))
+
 ```
 
 

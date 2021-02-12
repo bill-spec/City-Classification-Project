@@ -18,12 +18,21 @@ Next we can take the 37,506 observations that aren't inside the top 50 regions, 
 ```{r}
 load(file = "cleanDallas.RData")
 #dallasData
+dallasData
 ```
+
+
+```{r}
+dallasData %>% filter((location %in% listOfAreas))
+dallasData %>% filter(!(location %in% listOfAreas))
+```
+
 
 ```{r}
 load(file = "AreasDallas.RData")
 dallasDataAddress <- dallasData %>% filter(!(location %in% listOfAreas))
 #dallasDataAddress 
+dallasDataAddress
 ```
 
 ```{r}

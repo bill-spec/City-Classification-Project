@@ -11,20 +11,25 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggmap)
 ```
-s
+
+
 
 ```{r}
-load(file = "Detroit.RData")
-detroit
-
-detroit %>% filter(Area != "")
-detroit %>% group_by(Column.Location) %>% summarise(count = n()) %>% arrange(desc(count))
-detroit %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
-detroit %>% filter(Street != "")
-
-#24433 with and 53655 without area, Column.Loation has just Dallas
-#34,355 full address, 59,447 with street
+load(file = "phil.RData")
+phil
 ```
+
+
+```{r}
+phil %>% filter(area != "")
+phil %>% group_by(columnlocation) %>% summarise(count = n()) %>% arrange(desc(count))
+phil %>% group_by(area) %>% summarise(count = n()) %>% arrange(desc(count))
+phil %>% filter(street != "")
+
+#108122 with and 12650 without area, but a lot of these are just labeled as Philadelphia
+#77780 with street
+```
+
 
 Dataset Specific preparation
 
@@ -32,26 +37,27 @@ Run in Open Street Map
 House Number First
 Then run the small location (if no small area then large area)
 
+
 ```{r}
-detroit$Area <- tolower(detroit$Area)
-detroit$Column.Location <- tolower(detroit$Column.Location)
-detroit$Street <- tolower(detroit$Street)
+phil$Area <- tolower(phil$area)
+phil$Column.Location <- tolower(phil$columnlocation)
+phil$Street <- tolower(phil$Street)
 
 
-detroit <- detroit %>% mutate(location = ifelse(Area != "", as.character(Area), as.character(Column.Location))) %>% mutate(location = str_replace_all(location, "detroit", "")) %>%
-  mutate(location = str_replace_all(location, "detriot", ""))
+phil <- phil %>% mutate(location = ifelse(area != "", as.character(area), as.character(columnlocation))) %>% mutate(location = str_replace_all(location, "philadelphia", "")) %>%
+  mutate(location = str_replace_all(location, "philadelphia", ""))
 
-detroit %>% filter(location != "")
+phil %>% filter(location != "")
 #28,064 not blank location
 
 
 #We can build the addres column to geocode
 
-detroit <- detroit %>% unite(Address, c("Hse.No","Street", "location"), sep = " ",remove = FALSE)
-detroit$Address <- paste(detroit$Address, ", Detroit")
-detroit$Address <- trimws(detroit$Address)
+phil <- phil %>% unite(Address, c("hseno","street", "location"), sep = " ",remove = FALSE)
+phil$Address <- paste(phil$Address, ", Philadelphia")
+phil$Address <- trimws(phil$Address)
 
-detroit = detroit %>% 
+phil = phil %>% 
   mutate(Address = str_replace_all(Address, "#", "")) %>% 
   mutate(Address = str_replace_all(Address, "[.]"," ")) %>%
   mutate(Address = str_replace_all(Address, " ne ", " northeast ")) %>% 
@@ -75,7 +81,7 @@ detroit = detroit %>%
   mutate(Address = str_replace_all(Address, " pl,"," place,") ) %>%
   mutate(Address = str_replace_all(Address, "americana","american") ) %>%
   mutate(Address = str_replace_all(Address, "near",""))
-detroit
+phil
 ```
 
 Starting off with the first address set

@@ -123,7 +123,10 @@ detroitData
 
 ```{r}
 cleanDetroit = detroitData
-cleanDetroit
+cleanDetroit$location = as.character(cleanDetroit$location)
+
+cleanDetroit = cleanDetroit %>% mutate(location = ifelse( (( (latitude > 42.30 & latitude < 42.4)  & (longitude < -83.0 & longitude > -83.1)) ), "", location))
+
 save(cleanDetroit, file = "cleanDetroit.RData")
 ```
 
@@ -135,15 +138,11 @@ register_google(key = k)
 
 
 ```{r} 
-map <- get_map(location = 'Detroit', zoom = 7, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = test, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 1) + theme(legend.position = "none")
+map <- get_map(location = 'Detroit', zoom = 11, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = cleanDetroit, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 1) + theme(legend.position = "none")
 
 ```
 
 
-
-```{r}
-
-```
 
 

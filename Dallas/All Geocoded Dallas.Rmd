@@ -163,13 +163,14 @@ dallasGeocoded
 geocodedDallasFound <- dallasGeocoded %>% filter(!is.na(latitude)) %>% filter( ((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
 geocodedDallasNotFound <- dallasGeocoded %>% filter(is.na(latitude) | !((latitude > 32 & latitude < 34) & (longitude > -98 & longitude < -96)) )
 geocodedDallasFound
+geocodedDallasNotFound
 
 dallasGeocoded = geocodedDallasFound
 ```
 
 ```{r}
 save(dallasGeocoded, file = "dallasGeocoded2.RData")
-save(geocodedDallasNotFound, file = "dallasGeocodedNotFound.RDa")
+save(geocodedDallasNotFound, file = "dallasGeocodedNotFound.RData")
 ```
 
 

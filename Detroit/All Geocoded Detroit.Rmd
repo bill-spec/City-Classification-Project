@@ -81,11 +81,10 @@ detroit
 Starting off with the first address set
 
 ```{r}
-geocodedAllDetroit <- tidygeocoder::geocode(.tbl = detroit, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodedAllDetroit
-save(geocodedAllDetroit, file = "allDetroit.RData")
+#geocodedAllDetroit <- tidygeocoder::geocode(.tbl = detroit, address = Address, method = "osm", lat = latitude, long = longitude)
+#geocodedAllDetroit
+#save(geocodedAllDetroit, file = "allDetroit.RData")
 
-geocodedAllDetroit %>% filter(!is.na(latitude))
 ```
 
 ```{r}
@@ -103,17 +102,16 @@ geocodedDetroitFound
 We redo the geocoding with a new address for each by removing the "location" data that was put in before.
 
 ```{r}
-geocodedDetroitReDo <- geocodedDetroitReDo %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
-geocodedDetroitReDo$Address <- paste(geocodedDetroitReDo$Address, ",Detroit") 
-geocodedDetroitReDo <- geocodedDetroitReDo %>% select(-latitude, -longitude)
-geocodedDetroitReDo
+#geocodedDetroitReDo <- geocodedDetroitReDo %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
+#geocodedDetroitReDo$Address <- paste(geocodedDetroitReDo$Address, ",Detroit") 
+#geocodedDetroitReDo <- geocodedDetroitReDo %>% select(-latitude, -longitude)
+#geocodedDetroitReDo
 ```
 
 ```{r}
-secondDetroit <- tidygeocoder::geocode(.tbl = geocodedDetroitReDo, address = Address, method = "osm", lat = latitude, long = longitude)
-secondDetroit
-save(secondDetroit, file = "secondDetroit.RData")
-secondDetroit %>% filter(!is.na(latitude))
+#secondDetroit <- tidygeocoder::geocode(.tbl = geocodedDetroitReDo, address = Address, method = "osm", lat = latitude, long = longitude)
+#secondDetroit
+#save(secondDetroit, file = "secondDetroit.RData")
 ```
 
 ```{r}
@@ -144,17 +142,16 @@ geocodedDetroitReDo2
 We redo the geocoding with a new address for each by removing the "location" data that was put in before.
 
 ```{r}
-geocodedDetroitReDo2 <- geocodedDetroitReDo2 %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
-geocodedDetroitReDo2$Address <- paste(geocodedDetroitReDo2$Address, ",Michigan") 
-geocodedDetroitReDo2 <- geocodedDetroitReDo2 %>% select(-latitude, -longitude)
-geocodedDetroitReDo2
+#geocodedDetroitReDo2 <- geocodedDetroitReDo2 %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
+#geocodedDetroitReDo2$Address <- paste(geocodedDetroitReDo2$Address, ",Michigan") 
+#geocodedDetroitReDo2 <- geocodedDetroitReDo2 %>% select(-latitude, -longitude)
+#geocodedDetroitReDo2
 ```
 
 ```{r}
-thirdDetroit <- tidygeocoder::geocode(.tbl = geocodedDetroitReDo2, address = Address, method = "osm", lat = latitude, long = longitude)
-thirdDetroit
-save(thirdDetroit, file = "thirdDetroit.RData")
-secondDetroit %>% filter(!is.na(latitude))
+#thirdDetroit <- tidygeocoder::geocode(.tbl = geocodedDetroitReDo2, address = Address, method = "osm", lat = latitude, long = longitude)
+#thirdDetroit
+#save(thirdDetroit, file = "thirdDetroit.RData")
 ```
 
 ```{r}

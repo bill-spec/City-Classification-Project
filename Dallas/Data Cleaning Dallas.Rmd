@@ -104,7 +104,7 @@ abline(model)
 
 ```{r}
 dallasData = dallasData %>% filter(!is.na(latitude))%>% filter(!is.na(longitude))
-
+dallasData$location = as.character(dallasData$location)
 save(dallasData, file = "cleanDallas.RData")
 ```
 

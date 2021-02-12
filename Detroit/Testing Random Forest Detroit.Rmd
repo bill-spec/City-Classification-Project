@@ -24,14 +24,7 @@ cleanDetroit
 ```{r}
 load(file = "AreasDetroit.RData")
 
-#We must add back in the center of the city that we had taken out before
-centerOfCity = dataDetroit %>% filter(location %in% listOfAreas) %>% filter(( (latitude > 42.30 & latitude < 42.4)  & (longitude < -83.0 & longitude > -83.1)) )
-
-dataDetroit <- cleanDetroit %>% filter(!(Area %in% listOfAreas))
-
-#Add both datasets together
-dataDetroit = rbind(dataDetroit, centerOfCity) 
-
+dataDetroit <- cleanDetroit %>% filter(!(location %in% listOfAreas))
 dataDetroit
 ```
 
@@ -76,7 +69,7 @@ save(predicted, file = "predicctedBoston.RData")
 
 ```{r}
 map <- get_map(location = 'Detroit', zoom = 10 , maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = centerOfCity, mapping = aes(x = longitude, y = latitude), size = .1) #+ theme(legend.position = "none")
+ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(yhat.rf)), size = .1) + theme(legend.position = "none")
 ```
 
 

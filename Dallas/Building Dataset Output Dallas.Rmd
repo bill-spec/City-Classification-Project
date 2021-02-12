@@ -37,8 +37,9 @@ dallasExport
 Load in the rows we could not geocode
 
 ```{r}
-load(file = "dallasGeocodedNotFound.RDa")
+load(file = "dallasGeocodedNotFound.RData")
 geocodedDallasNotFound = geocodedDallasNotFound %>% select(-c(X,X.1))
+geocodedDallasNotFound
 ```
 
 
@@ -113,10 +114,10 @@ dallasExport
 
 ```{r}
 dallasExport = rbind(dallasExport,geocodedDallasNotFound)
+dallasExport
 ```
 
 ```{r}
 write.csv(dallasExport, file = "C:/Users/the36/Desktop/DataRA/RExports/DallasExport.csv",row.names=FALSE)
-
 ```
 
