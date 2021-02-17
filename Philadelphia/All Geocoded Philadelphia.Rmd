@@ -16,7 +16,8 @@ library(ggmap)
 
 ```{r}
 load(file = "phil.RData")
-phil
+phil %>% filter(area == "nj")
+
 ```
 
 
@@ -160,7 +161,7 @@ register_google(key = k)
 
 ```{r} 
 map <- get_map(location = 'Philadelphia', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = detroitGeocoded, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+ggmap(map) + geom_point(data = geocodedPhil, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
 ```
 
 
