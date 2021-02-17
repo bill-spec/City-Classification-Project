@@ -1,0 +1,76 @@
+---
+title: "Split Boston"
+author: "Bill Lang"
+date: "2/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+This is the file to split the boston data to before and after 1950.
+
+Reading in file.
+
+```{r}
+load(file = "cleanBoston.RData")
+bostonData
+```
+
+```{r}
+bostonData$Area <- tolower(bostonData$Area)
+```
+
+
+```{r}
+bostonData1949 = bostonData %>% filter(Year <= 1949)
+bostonData1950 = bostonData %>% filter(Year > 1949)
+```
+
+
+Removing areas with no information. 
+
+```{r}
+bostonData1949 <- bostonData1949 %>% filter(Area != "") 
+bostonData1950 <- bostonData1950 %>% filter(Area != "") 
+bostonData <- bostonData %>% filter(Area != "")
+```
+
+
+Finding the top labeled areas.
+
+```{r}
+tbl1949 <- bostonData1949 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas1949 <- tbl1949[1:50,]$Area
+listOfAreas1949
+tbl1949
+```
+
+```{r}
+tbl1950 <- bostonData1950 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas1950 <- tbl1950[1:50,]$Area
+listOfAreas1950
+tbl1950
+```
+
+
+
+
+```{r}
+tbl <- bostonData %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas <- tbl[1:50,]$Area
+listOfAreas
+save(listOfAreas, file = "Areas.RData")
+```
+
+Find the observations with a top 50 area. 
+
+```{r}
+bostonAddress <- bostonData %>% filter(Area %in% listOfAreas)
+
+#saving this file for the export dataset
+bostonAddressTop50 <- bostonAddress
+save(bostonAddressTop50, file = "bostonTop50.RData")
+```
