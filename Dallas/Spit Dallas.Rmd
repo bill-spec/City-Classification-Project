@@ -1,0 +1,112 @@
+---
+title: "Split Dallas"
+author: "Bill Lang"
+date: "2/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+This is the file to split the Dallas data to before and after 1950.
+
+Reading in file.
+
+```{r}
+load(file = "cleanDallas.RData")
+dallasData
+```
+
+```{r}
+dallasData$Area <- tolower(dallasData$Area)
+```
+
+
+```{r}
+dallasData1949 = dallasData %>% filter(Year <= 1949)
+dallasData1950 = dallasData %>% filter(Year > 1949)
+```
+
+
+Removing areas with no information. 
+
+```{r}
+dallasData1949 <- dallasData1949 %>% filter(Area != "") 
+dallasData1950 <- dallasData1950 %>% filter(Area != "") 
+dallasData <- dallasData %>% filter(Area != "")
+```
+
+
+Finding the top labeled areas.
+
+```{r}
+tbl1949 <- dallasData1949 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas1949 <- tbl1949[1:50,]$Area
+listOfAreas1949
+tbl1949
+```
+
+```{r}
+tbl1950 <- dallasData1950 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas1950 <- tbl1950[1:50,]$Area
+listOfAreas1950
+tbl1950
+```
+
+
+```{r}
+#out of 50 top areas
+t = intersect(listOfAreas1949,listOfAreas1950)
+t
+length(t)
+
+```
+
+
+
+```{r}
+tbl <- dallasData %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas <- tbl[1:50,]$Area
+listOfAreas
+```
+
+
+```{r}
+dallas1949 <- dallasData %>% filter(Area %in% listOfAreas1949)
+dallas1950 <- dallasData %>% filter(Area %in% listOfAreas1950)
+dallasAll <- dallasData %>% filter(Area %in% listOfAreas)
+```
+
+
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r}
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = dallas1949, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+```
+
+```{r}
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = dallas1950, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+```
+
+```{r}
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = dallasAll, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+```
+
+
+```{r}
+
+```
+
+
+

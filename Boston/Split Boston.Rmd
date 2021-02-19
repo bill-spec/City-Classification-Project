@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+
 ```
 
 This is the file to split the boston data to before and after 1950.
@@ -65,6 +66,22 @@ length(t)
 ```
 
 
+
+```{r}
+tbl <- bostonData %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+listOfAreas <- tbl[1:50,]$Area
+listOfAreas
+```
+
+
+```{r}
+boston1949 <- bostonData %>% filter(Area %in% listOfAreas1949)
+boston1950 <- bostonData %>% filter(Area %in% listOfAreas1950)
+bostonAll <- bostonData %>% filter(Area %in% listOfAreas)
+```
+
+
+
 ```{r}
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
 register_google(key = k)
@@ -73,26 +90,72 @@ register_google(key = k)
 
 ```{r}
 map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = geocoded, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+ggmap(map) + geom_point(data = boston1949, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = boston1950, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = bostonAll, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
 ```
-
-
 
 
 
 ```{r}
-tbl <- bostonData %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas <- tbl[1:50,]$Area
-listOfAreas
-save(listOfAreas, file = "Areas.RData")
+
 ```
 
-Find the observations with a top 50 area. 
 
 ```{r}
-bostonAddress <- bostonData %>% filter(Area %in% listOfAreas)
+splitByDecadeImages <- function(dataframe){
+  
+  listOutput = list()
+  listMapOutput = list()
+  
+  for(year in seq(1900, 2000, by = 10)){
+    
+  #Split te dataframe by decade  
+  dataframeSplit = dataframe %>% filter(Year < year) %>% filter(Year >= year-10)
+  
+  #Call the top n areas each run
+  df <- dataframeSplit %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
+  df <- df[1:50,]$Area
+  
+  #add them to the array
+  listOutput[[length(listOutput)+1]] = df
+  
+  }
+  
+  
+  
+map <- get_map(location = 'Boston', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
 
-#saving this file for the export dataset
-bostonAddressTop50 <- bostonAddress
-save(bostonAddressTop50, file = "bostonTop50.RData")
+  for(i in 1:11){
+    
+    mapData <- dataframe %>% filter(Area %in% listOutput[i])
+    
+listMapOutput[[length(listMapOutput) + 1]] = ggmap(map) + geom_point(data = mapData, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+    
+  }
+  
+return(listMapOutput)
+  
+}  
+
+
+bostonData$Area = as.character(bostonData$Area)
+
+a = splitByDecade(bostonData)
+
+a
+
+length(a)
+
+
+list = list()
+
+
 ```
+
+
+
