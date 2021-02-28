@@ -44,14 +44,14 @@ Finding the top labeled areas.
 
 ```{r}
 tbl1949 <- dallasData1949 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas1949 <- tbl1949[1:50,]$Area
+listOfAreas1949 <- tbl1949[1:20,]$Area
 listOfAreas1949
 tbl1949
 ```
 
 ```{r}
 tbl1950 <- dallasData1950 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas1950 <- tbl1950[1:50,]$Area
+listOfAreas1950 <- tbl1950[1:20,]$Area
 listOfAreas1950
 tbl1950
 ```

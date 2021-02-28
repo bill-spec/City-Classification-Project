@@ -32,7 +32,7 @@ listOfAreasNY <- tbl[1:12,]$Coarse.Geo
 
 listOfAreasNY <- listOfAreasNY[listOfAreasNY != "newyork"]
 
-save(listOfAreasNY, file = "NYAreas.RData")
+#save(listOfAreasNY, file = "NYAreas.RData")
 load(file = "NYAreas.RData")
 ```
 
@@ -93,7 +93,7 @@ register_google(key = k)
 ```
 
 ```{r}
-map <- get_map(location = 'New York', zoom = 8, maptype = "terrain-background", source = 'google', color = 'color')
+map <- get_map(location = 'New York', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
 
 ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(Coarse.Geo)), size = 1)
 

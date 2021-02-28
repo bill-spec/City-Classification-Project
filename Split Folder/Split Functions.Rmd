@@ -1,0 +1,131 @@
+---
+title: "Split Functions"
+author: "Bill Lang"
+date: "2/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggmap)
+library(gganimate)
+```
+
+
+```{r}
+
+#force column to be the location column
+
+splitByDecadeImages <- function(dataframe, locationCount, city){
+  
+  
+  listOutput = list()
+  listMapOutput = list()
+  i = 0 
+  
+  #First loop to split by deacdes to grab areas
+  for(year in seq(1900, 2000, by = 10)){
+    
+  #Split te dataframe by decade  
+  dataframeSplit = dataframe %>% filter(Year < year) %>% filter(Year >= year-10)
+  
+  #Call the top n areas each run
+  df <- dataframeSplit %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  df <- df[1:locationCount,]$location
+  
+  #add them to the array
+  listOutput[[i+1]] = df
+  i = i + 1
+  }
+  
+##  
+  library(ggmap)
+  k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+  register_google(key = k)
+  map <- get_map(location = city, zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+##
+
+
+  #This is the loop for the maps
+  decades = seq(1900, 2000, by = 10)
+  for(i in 1:11){
+
+    mapData <- dataframe %>% filter(location %in% as_vector(listOutput[i])) %>% filter(Year < decades[i]) %>% filter(Year >= decades[i]-10)
+
+  listMapOutput[[i + 1]] = ggmap(map) + geom_point(data = mapData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 1) + theme(legend.position = "none")+ ggtitle(paste0("Top ",locationCount," locations between ",decades[i]-10, " and ", decades[i]))
+
+  }
+  
+return(listMapOutput)
+  
+}  
+
+```
+
+```{r}
+#assume that the column of interest is called 'location'
+#dataframe is the city in question 
+#lcoationCount is the number 
+
+intersectionBetweenDecades <- function(dataframe, locationCount){
+  
+  listOutput = list()
+  i = 0 
+  
+  #First loop to split by deacdes to grab areas
+  for(year in seq(1900, 2000, by = 10)){
+    
+  #Split te dataframe by decade 
+  dataframeSplit = dataframe %>% filter(Year < year) %>% filter(Year >= year-10)
+  
+  #Call the top n areas each run
+  df <- dataframeSplit %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  df <- df[1:locationCount,]$location
+  
+  #add them to the array
+  listOutput[[i+1]] = df
+  i = i + 1
+  }  
+  
+  Reduce(intersect, listOutput[-c(1:6,8:11)])
+  #return(listOutput)
+}
+
+```
+
+
+```{r}
+load("cleanBoston.RData")
+load("cleanDallas.RData")
+load("cleanDC.RData")
+load("cleanDetroit.RData")
+load("cleanNY.RData")
+bostonData$location = as.character(bostonData$Area)
+#dallasData$location = as.character(dallasData$Area)
+NYData$location = as.character(NYData$Column.Location)
+```
+
+
+```{r}
+intersectionBetweenDecades(bostonData,50)
+intersectionBetweenDecades(dallasData,20)
+intersectionBetweenDecades(cleanDC,20)
+intersectionBetweenDecades(cleanDetroit,20)
+intersectionBetweenDecades(NYData,12)
+```
+
+
+```{r}
+
+splitByDecadeImages(bostonData,50, 'Boston')
+splitByDecadeImages(dallasData,20, 'Dallas')
+splitByDecadeImages(cleanDC,20, 'DC')
+splitByDecadeImages(cleanDetroit,20, 'Detroit')
+splitByDecadeImages(NYData,12, 'New York')
+
+```
+
+
+
+
