@@ -162,7 +162,17 @@ geocodeThirdPhil <- tidygeocoder::geocode(.tbl = geocodedPhilReDo2, address = Ad
 geocodeThirdPhil
 save(geocodeThirdPhil, file = "geocodeThirdPhil.RData")
 geocodeThirdPhil %>% filter(!is.na(latitude))
+```
 
+
+```{r}
+geocodedPhilFound3 <- geocodeThirdPhil %>% filter(!is.na(latitude)) %>% filter( ((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.3)) )
+geocodedPhilReDo3 <- geocodeThirdPhil %>% filter(is.na(latitude) | !((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.45)) )
+geocodedPhilFound3
+geocodedPhilReDo3
+
+geocodedPhil <- rbind(geocodedPhilFound, geocodedPhilFound3)
+geocodedPhil
 ```
 
 
