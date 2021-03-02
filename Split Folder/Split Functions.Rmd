@@ -53,7 +53,7 @@ splitByDecadeImages <- function(dataframe, locationCount, city){
 
     mapData <- dataframe %>% filter(location %in% as_vector(listOutput[i])) %>% filter(Year < decades[i]) %>% filter(Year >= decades[i]-10)
 
-  listMapOutput[[i + 1]] = ggmap(map) + geom_point(data = mapData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 1) + theme(legend.position = "none")+ ggtitle(paste0("Top ",locationCount," locations between ",decades[i]-10, " and ", decades[i]))
+  listMapOutput[[i + 1]] = ggmap(map) + geom_point(data = mapData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = .1) + theme(legend.position = "bottom")+ ggtitle(paste0("Top ",locationCount," locations between ",decades[i]-10, " and ", decades[i]))
 
   }
   
@@ -88,7 +88,7 @@ intersectionBetweenDecades <- function(dataframe, locationCount){
   i = i + 1
   }  
   
-  Reduce(intersect, listOutput[-c(1:6,8:11)])
+  Reduce(intersect, listOutput[-c(1:5,10:11)])
   #return(listOutput)
 }
 
@@ -102,14 +102,13 @@ load("cleanDC.RData")
 load("cleanDetroit.RData")
 load("cleanNY.RData")
 bostonData$location = as.character(bostonData$Area)
-#dallasData$location = as.character(dallasData$Area)
 NYData$location = as.character(NYData$Column.Location)
 ```
 
 
 ```{r}
 intersectionBetweenDecades(bostonData,50)
-intersectionBetweenDecades(dallasData,20)
+intersectionBetweenDecades(dallasData,16)
 intersectionBetweenDecades(cleanDC,20)
 intersectionBetweenDecades(cleanDetroit,20)
 intersectionBetweenDecades(NYData,12)
@@ -125,7 +124,6 @@ splitByDecadeImages(cleanDetroit,20, 'Detroit')
 splitByDecadeImages(NYData,12, 'New York')
 
 ```
-
 
 
 

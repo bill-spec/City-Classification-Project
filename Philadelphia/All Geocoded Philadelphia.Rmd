@@ -150,6 +150,20 @@ geocodedPhil <- rbind(geocodedPhilFound, geocodedPhilFound2)
 geocodedPhil
 ```
 
+```{r}
+geocodedPhilReDo2 <- geocodedPhilReDo2 %>% unite(Address, c("hseno","street"), sep = " ",remove = FALSE)
+geocodedPhilReDo2$Address <- trimws(geocodedPhilReDo2$Address) 
+geocodedPhilReDo2 <- geocodedPhilReDo2 %>% select(-latitude, -longitude)
+geocodedPhilReDo2
+```
+
+```{r}
+geocodeThirdPhil <- tidygeocoder::geocode(.tbl = geocodedPhilReDo2, address = Address, method = "osm", lat = latitude, long = longitude)
+geocodeThirdPhil
+save(geocodeThirdPhil, file = "geocodeThirdPhil.RData")
+geocodeThirdPhil %>% filter(!is.na(latitude))
+
+```
 
 
 Mapping

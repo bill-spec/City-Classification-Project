@@ -1,7 +1,7 @@
 ---
-title: "Training Random Forest Dallas"
+title: "Dallas Split"
 author: "Bill Lang"
-date: "10/14/2020"
+date: "3/1/2021"
 output: html_document
 ---
 
@@ -13,6 +13,8 @@ library(ggmap)
 library(randomForest)
 ```
 
+
+
 Reading in file.
 
 ```{r}
@@ -20,8 +22,8 @@ load(file = "cleanDallas.RData")
 dallasData
 ```
 
- 
-Finding the top labeled areas prior to 1950 and after 1951.
+
+Finding the top labeled locations before 1949 and after 1949.
 
 ```{r}
 dallasData$location <- tolower(dallasData$location)
@@ -78,8 +80,7 @@ register_google(key = k)
 
 ```{r} 
 map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) #+ theme(legend.position = "none")
-
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
 ```
 
 
@@ -99,67 +100,5 @@ Lat, Long only
 ```{r}
 fullModelLocation <- randomForest(location ~ latitude + longitude, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
 ```
-
-
-
-
-
-
-Next we can take the 37,506 observations that aren't inside the top 50 regions, predict the most likely region to classify them in, and investigate if the results seem correct.
-
-```{r}
-load(file = "cleanDallas.RData")
-#dallasData
-dallasData
-```
-
-
-```{r}
-dallasData %>% filter((location %in% listOfAreas))
-dallasData %>% filter(!(location %in% listOfAreas))
-```
-
-
-```{r}
-load(file = "AreasDallas.RData")
-dallasDataAddress <- dallasData %>% filter(!(location %in% listOfAreas))
-#dallasDataAddress 
-dallasDataAddress
-```
-
-```{r}
-dallasDataAddress <- dallasDataAddress %>% filter(!is.na(latitude))
-#dallasDataAddress
-```
-
-Predict the data using the previous model and map the results for validation. 
-
-```{r}
-yhat.rf <- predict(fullModel, newdata = dallasDataAddress)
-predicted <- cbind(dallasDataAddress,yhat.rf)
-predicted <- predicted %>% mutate(calculatedColumn = yhat.rf) %>% select(-yhat.rf)
-predicted
-
-#Saving for the predicted file
-save(predicted, file = "predictedDallas.RData")
-```
-
-
-```{r}
-map <- get_map(location = 'Dallas', zoom = 10 , maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = predicted, mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = 1)#+ theme(legend.position = "none")
-
-```
-
-
-
-
-
-
-
-
-
-
-
 
 

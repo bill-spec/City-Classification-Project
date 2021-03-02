@@ -8,6 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(tidygeocoder)
+library(ggmap)
+library(randomForest)
 ```
 
 
@@ -22,91 +25,165 @@ dallasData
 
 ```{r}
 dallasData$Area <- tolower(dallasData$Area)
-```
+dallasData$iden = c(1:nrow(dallasData))
 
-
-```{r}
 dallasData1949 = dallasData %>% filter(Year <= 1949)
 dallasData1950 = dallasData %>% filter(Year > 1949)
-```
+
+#Finding the top labeled areas and making dataframes of each
+
+tbl1949 <- dallasData1949 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+listOfAreas1949 <- tbl1949[1:20,]$location
 
 
-Removing areas with no information. 
-
-```{r}
-dallasData1949 <- dallasData1949 %>% filter(Area != "") 
-dallasData1950 <- dallasData1950 %>% filter(Area != "") 
-dallasData <- dallasData %>% filter(Area != "")
-```
+tbl1950 <- dallasData1950 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))%>% filter(location != "")
+listOfAreas1950 <- tbl1950[1:20,]$location
 
 
-Finding the top labeled areas.
+tbl <- dallasData %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count))%>% filter(location != "")
+listOfAreas <- tbl[1:20,]$location
 
-```{r}
-tbl1949 <- dallasData1949 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas1949 <- tbl1949[1:20,]$Area
-listOfAreas1949
-tbl1949
-```
 
-```{r}
-tbl1950 <- dallasData1950 %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas1950 <- tbl1950[1:20,]$Area
-listOfAreas1950
-tbl1950
+dallas1949 <- dallasData1949 %>% filter(location %in% listOfAreas1949)
+dallas1950 <- dallasData1950 %>% filter(location %in% listOfAreas1950)
+dallasAll <- dallasData %>% filter(location %in% listOfAreas)
 ```
 
 
 ```{r}
-#out of 50 top areas
-t = intersect(listOfAreas1949,listOfAreas1950)
-t
-length(t)
-
-```
+#Train and investigate the results the model on those observations in the top 20 selected 
 
 
+#Preloading variable lists and vectors
+topLocationsList = list(listOfAreas1949,listOfAreas1950)
+allDataLists = list(dallasData1949,dallasData1950)
 
-```{r}
-tbl <- dallasData %>% group_by(Area) %>% summarise(count = n()) %>% arrange(desc(count))
-listOfAreas <- tbl[1:50,]$Area
-listOfAreas
-```
+splitCount = c(1:2)
 
-
-```{r}
-dallas1949 <- dallasData %>% filter(Area %in% listOfAreas1949)
-dallas1950 <- dallasData %>% filter(Area %in% listOfAreas1950)
-dallasAll <- dallasData %>% filter(Area %in% listOfAreas)
-```
+misclassVector = splitCount
+modelList = list()
 
 
-
-```{r}
+for(i in splitCount){
+  
+   
+  #Take the data and repeat 
+  currentDataFrame = allDataLists[[i]] %>% filter(location %in% topLocationsList[[i]])
+  currentDataFrame
+  
+  currentDataFrame$location = as.character(currentDataFrame$location)
+  currentDataFrame$location = as.factor(currentDataFrame$location)
+  
+  
+  modelData <- currentDataFrame 
+  set.seed(343)
+  shuf <- sample(nrow(modelData))
+  modelData <- modelData[shuf,]
+  train <- sample(nrow(modelData)*.8)
+  modelTrain <- modelData[train,]
+  modelTest <- modelData[-train,]
+  
+  
+  bag <- randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelTrain, ntree = 1000, importance = TRUE)
+  yhat.rf <- predict(bag, newdata = modelTest)
+  misclassRate <- mean(yhat.rf != modelTest$location)
+  misclassVector[i] = misclassRate
+  
 k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
 register_google(key = k)
-```
 
-
-```{r}
 map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = dallas1949, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+  
+
+#Train the full models
+
+modelList[[i]] = randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+
+
+}
+
+misclassVector[1]; misclassVector[2]
+modelList
+
+
+```
+
+
+
+
+
+
+```{r}
+#Take the full models and geocode those dataseets and take the results not in them
+
+predictedList = list()
+
+for(i in splitCount){
+  
+  #load the data that has yet to have and adequete location
+  currentDataFrame = allDataLists[[i]] %>% filter(!(location %in% topLocationsList[[i]]))
+  
+  yhat.rf <- predict(modelList[[i]], newdata = currentDataFrame)
+  predicted <- cbind(currentDataFrame,yhat.rf)
+  predicted <- predicted %>% mutate(calculatedColumn = yhat.rf) %>% select(-yhat.rf)
+  predictedList[[i]] = predicted
+  
+  
+}
+
+
+
+for(i in splitCount){
+
+  if(i == 1){
+    
+    fullDataSet = predictedList[[1]]
+    
+  }else{
+  
+fullDataSet = rbind(fullDataSet, predictedList[[i]]) 
+fullDataSet = fullDataSet %>% arrange(iden)
+
+  }
+}
+
+
+for(i in splitCount){
+
+  currentDataFrame = allDataLists[[i]] %>% filter(location %in% topLocationsList[[i]])
+  currentDataFrame$calculatedColumn = "Given"
+  
+fullDataSet = rbind(fullDataSet, currentDataFrame) 
+fullDataSet = fullDataSet %>% arrange(iden)
+
+
+}
+
+fullDataSet
+
 ```
 
 ```{r}
+
+  k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
 map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = dallas1950, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
+
+
+#want to plot out the predicted for each period
+mapList = list()
+
+for(i in splitCount){
+  
+
+mapList[[i]] = ggmap(map) + geom_point(data = predictedList[[i]], mapping = aes(x = longitude, y = latitude, color = factor(calculatedColumn)), size = 0.1) + theme(legend.position = "none")
+
+  
+
+}
+mapList[[1]]
+
 ```
-
-```{r}
-map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
-ggmap(map) + geom_point(data = dallasAll, mapping = aes(x = longitude, y = latitude, color = factor(Area)), size = 1) + theme(legend.position = "none")
-```
-
-
-```{r}
-
-```
-
 
 

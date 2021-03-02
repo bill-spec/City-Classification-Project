@@ -19,7 +19,6 @@ load(file = "DChandcheck.RData")
 ```
 
 
-
 ```{r}
 DC = DC[1:93879,] 
 
