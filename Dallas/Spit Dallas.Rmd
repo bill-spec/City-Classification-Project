@@ -183,7 +183,7 @@ mapList[[i]] = ggmap(map) + geom_point(data = predictedList[[i]], mapping = aes(
 
 }
 mapList[[1]]
-
+mapList[[2]]
 ```
 
 

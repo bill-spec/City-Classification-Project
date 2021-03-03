@@ -89,28 +89,22 @@ phil = phil %>%
   mutate(Address = str_replace_all(Address, "americana","american") ) %>%
   mutate(Address = str_replace_all(Address, "near",""))
 
-phil
 ```
 
 Starting off with the first address set
 
 ```{r}
-geocodeFirstPhil <- tidygeocoder::geocode(.tbl = phil, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeFirstPhil
-save(geocodeFirstPhil, file = "firstPhil.RData")
-geocodeFirstPhil %>% filter(!is.na(latitude))
+#geocodeFirstPhil <- tidygeocoder::geocode(.tbl = phil, address = Address, method = "osm", lat = latitude, long = longitude)
+#save(geocodeFirstPhil, file = "firstPhil.RData")
 ```
 
 ```{r}
 load(file = "firstPhil.RData")
-geocodeFirstPhil
 ```
 
 ```{r}
 geocodedPhilFound <- geocodeFirstPhil %>% filter(!is.na(latitude)) %>% filter( ((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.3)) )
 geocodedPhilReDo <- geocodeFirstPhil %>% filter(is.na(latitude) | !((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.3)) )
-geocodedPhilFound
-geocodedPhilReDo 
 ```
 
 We redo the geocoding with a new address for each by removing the "location" data that was put in before.
@@ -119,14 +113,13 @@ We redo the geocoding with a new address for each by removing the "location" dat
 geocodedPhilReDo <- geocodedPhilReDo %>% unite(Address, c("hseno","street"), sep = " ",remove = FALSE)
 geocodedPhilReDo$Address <- paste(geocodedPhilReDo$Address, ",Philadelphia") 
 geocodedPhilReDo <- geocodedPhilReDo %>% select(-latitude, -longitude)
-geocodedPhilReDo
+
 ```
 
 ```{r}
-geocodeSecondPhil <- tidygeocoder::geocode(.tbl = geocodedPhilReDo, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeSecondPhil
-save(geocodeSecondPhil, file = "geocodeSecondPhil.RData")
-geocodeSecondPhil %>% filter(!is.na(latitude))
+#geocodeSecondPhil <- tidygeocoder::geocode(.tbl = geocodedPhilReDo, address = Address, method = "osm", lat = latitude, long = longitude)
+#save(geocodeSecondPhil, file = "geocodeSecondPhil.RData")
+
 ```
 
 ```{r}
@@ -137,8 +130,7 @@ geocodeSecondPhil
 ```{r}
 geocodedPhilFound2 <- geocodeSecondPhil %>% filter(!is.na(latitude)) %>% filter( ((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.3)) )
 geocodedPhilReDo2 <- geocodeSecondPhil %>% filter(is.na(latitude) | !((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.45)) )
-geocodedPhilFound2
-geocodedPhilReDo2
+
 ```
 
 
@@ -147,7 +139,6 @@ Add the newly found rows into the entire dataset
 
 ```{r}
 geocodedPhil <- rbind(geocodedPhilFound, geocodedPhilFound2)
-geocodedPhil
 ```
 
 ```{r}
@@ -158,21 +149,20 @@ geocodedPhilReDo2
 ```
 
 ```{r}
-geocodeThirdPhil <- tidygeocoder::geocode(.tbl = geocodedPhilReDo2, address = Address, method = "osm", lat = latitude, long = longitude)
-geocodeThirdPhil
-save(geocodeThirdPhil, file = "geocodeThirdPhil.RData")
-geocodeThirdPhil %>% filter(!is.na(latitude))
+#geocodeThirdPhil <- tidygeocoder::geocode(.tbl = geocodedPhilReDo2, address = Address, method = "osm", lat = latitude, long = longitude)
+
+#save(geocodeThirdPhil, file = "geocodeThirdPhil.RData")
+
 ```
 
 
 ```{r}
+load(file = "geocodeThirdPhil.RData")
 geocodedPhilFound3 <- geocodeThirdPhil %>% filter(!is.na(latitude)) %>% filter( ((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.3)) )
 geocodedPhilReDo3 <- geocodeThirdPhil %>% filter(is.na(latitude) | !((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.45)) )
-geocodedPhilFound3
-geocodedPhilReDo3
 
-geocodedPhil <- rbind(geocodedPhilFound, geocodedPhilFound3)
-geocodedPhil
+geocodedPhil <- rbind(geocodedPhil, geocodedPhilFound3)
+
 ```
 
 
@@ -194,48 +184,54 @@ ggmap(map) + geom_point(data = geocodedPhil, mapping = aes(x = longitude, y = la
 We redo the geocoding with a new address for each by removing the "location" data that was put in before.
 
 ```{r}
-geocodedPhilReDo2 <- geocodedPhilReDo2 %>% unite(Address, c("Hse.No","Street"), sep = " ",remove = FALSE)
-geocodedPhilReDo2$Address <- paste(geocodedPhilReDo2$Address, ",Michigan") 
-geocodedPhilReDo2 <- geocodedPhilReDo2 %>% select(-latitude, -longitude)
-geocodedPhilReDo2
+geocodedPhilReDo3 <- geocodedPhilReDo3 %>% unite(Address, c("hseno","street","location"), sep = " ",remove = FALSE)
+geocodedPhilReDo3$Address <- trimws(geocodedPhilReDo3$Address)  
+geocodedPhilReDo3 <- geocodedPhilReDo3 %>% select(-latitude, -longitude)
+
 ```
 
 ```{r}
-thirdDetroit <- tidygeocoder::geocode(.tbl = geocodedDetroitReDo2, address = Address, method = "osm", lat = latitude, long = longitude)
-thirdDetroit
-save(thirdDetroit, file = "thirdDetroit.RData")
-secondDetroit %>% filter(!is.na(latitude))
+#geocodedFourthPhil <- tidygeocoder::geocode(.tbl = geocodedPhilReDo3, address = Address, method = "osm", lat = latitude, long = longitude)
+
+#save(geocodedFourthPhil, file = "geocodedFourthPhil.RData")
+
 ```
 
 ```{r}
-load(file = "thirdDetroit.RData")
-thirdDetroit
+load(file = "geocodedFourthPhil.RData")
+
+geocodedPhilFound4 <- geocodedFourthPhil %>% filter(!is.na(latitude)) %>% filter( ((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.3)) )
+geocodedPhilReDo4 <- geocodedFourthPhil %>% filter(is.na(latitude) | !((latitude > 39.45 & latitude < 40.45) & (longitude > -76 & longitude < -74.45)) )
+
+```
+```{r}
+geocodedPhil <- rbind(geocodedPhil, geocodedPhilFound4)
+save(geocodedPhil, file = "geocodedPhil.RData")
+```
+
+
+```{r}
+notGeocodedPhil = geocodedPhilReDo4 %>% mutate(latitude = NA) %>% mutate(longitude = NA)
+notGeocodedPhil
+save(notGeocodedPhil, file = "notGeocodedPhil.RData")
 ```
 
 ```{r}
-geocodedDetroitFound3 <- thirdDetroit %>% filter(!is.na(latitude)) %>% filter( ((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
-geocodedDetroitReDo3 <- thirdDetroit %>% filter(is.na(latitude) | !((latitude > 42 & latitude < 43) & (longitude > -84 & longitude < -82)) )
-geocodedDetroitReDo3
-geocodedDetroitFound3
+
+load("geocodedPhil.RData")
+load("notGeocodedPhil.RData")
+
+geocodedPhil
+notGeocodedPhil
+
+
+geocodedPhil <- rbind(geocodedPhil, notGeocodedPhil)
+geocodedPhil =geocodedPhil %>% arrange(id)
+PhilExport = geocodedPhil
+#Output to a csv on the desktop
+write.csv(PhilExport, file = "C:/Users/the36/Desktop/DataRA/RExports/PhilExport.csv")
+
 ```
-
-Add the newly found rows into the entire dataset
-
-```{r}
-detroitGeocoded <- rbind(detroitGeocoded, geocodedDetroitFound3)
-detroitGeocoded
-```
-
-```{r}
-notGeocoded = geocodedDetroitReDo3
-notGeocoded
-save(notGeocoded, file = "notGeocoded.RData")
-```
-
-```{r}
-save(detroitGeocoded, file = "detroitGeocoded.RData")
-```
-
 
 
 ```{r}
