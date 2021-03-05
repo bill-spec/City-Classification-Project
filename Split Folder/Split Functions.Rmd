@@ -128,6 +128,36 @@ splitByDecadeImages(NYData,12, 'New York')
 
 ```{r}
 
+
+intersectBetweenHalf <- function(dataframe, locationCount){
+  
+  df <- dataframe %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  df <- df[1:locationCount,]$location
+  
+  
+  #Split te dataframe by decade 
+  dataframeSplit49 = dataframe %>% filter(Year < 1950) 
+  dataframeSplit50 = dataframe %>% filter(Year >= 1950)
+  
+  #Call the top n areas each run
+  df49 <- dataframeSplit49 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  df49 <- df49[1:locationCount,]$location
+  
+  df50 <- dataframeSplit50 %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  df50 <- df50[1:locationCount,]$location
+  
+  a = intersect(df49,df50)
+  length(a)
+  #a
+
+}
+ 
+intersectBetweenHalf(bostonData,50)
+intersectBetweenHalf(dallasData,16)
+intersectBetweenHalf(cleanDC,20)
+intersectBetweenHalf(cleanDetroit,20)
+intersectBetweenHalf(NYData,12)
+ 
 ```
 
 
