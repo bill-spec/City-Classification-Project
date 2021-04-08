@@ -1,0 +1,591 @@
+---
+title: "Three Split Random Forest"
+author: "Bill Lang"
+date: "3/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(randomForest)
+
+```
+
+
+
+```{r}
+load(file = "dallasGeocodedNotFound.RData")
+geocodedDallasNotFound = geocodedDallasNotFound %>% select(-c(X,X.1))
+geocodedDallasNotFound
+
+
+load(file = "dallasGeocoded2.RData")
+dallasGeocoded
+
+data = plyr::rbind.fill(dallasGeocoded,geocodedDallasNotFound)
+data
+```
+
+
+
+
+```{r}
+#Call single forest
+
+loadPackages()
+splitDataList = splitData(data)
+
+dataWithLocations = splitDataList[[1]]
+dataWithoutLocations = splitDataList[[2]]
+
+dataWithLocations = cleanData(dataWithLocations)
+
+forestList = callForest(dataWithLocations,20)
+
+dataWithLocationsCalculated = forestList[[1]]
+
+returnData = mergeData(dataWithLocationsCalculated,dataWithoutLocations)
+returnData
+
+```
+
+```{r}
+#Call triple
+
+loadPackages()
+splitDataList = splitData(data)
+
+dataWithLocations = splitDataList[[1]]
+dataWithoutLocations = splitDataList[[2]]
+
+dataWithLocations = cleanData(dataWithLocations)
+
+forestList = callAllForests(dataWithLocations,20)
+dataWithLocationsCalculated = forestList[[1]]
+
+returnData = mergeData(dataWithLocationsCalculated,dataWithoutLocations)
+returnData
+```
+
+```{r}
+#Call all 
+
+loadPackages()
+splitDataList = splitData(data)
+
+dataWithLocations = splitDataList[[1]]
+dataWithoutLocations = splitDataList[[2]]
+
+dataWithLocations = cleanData(dataWithLocations)
+
+forestList = callAllForests(dataWithLocations,20)
+dataWithLocationsCalculated = forestList[[1]]
+
+forestList = callForest(dataWithLocationsCalculated,20)
+dataWithLocationsCalculated = forestList[[1]]
+
+returnData = mergeData(dataWithLocationsCalculated,dataWithoutLocations)
+returnData
+```
+
+
+```{r}
+#Call single forest
+callSingleForest <- function(dataframe, locationCount){
+  
+
+loadPackages()
+splitDataList = splitData(dataframe)
+
+dataWithLocations = splitDataList[[1]]
+dataWithoutLocations = splitDataList[[2]]
+
+dataWithLocations = cleanData(dataWithLocations)
+
+forestList = callForest(dataWithLocations,locationCount)
+
+dataWithLocationsCalculated = forestList[[1]]
+
+returnData = mergeData(dataWithLocationsCalculated,dataWithoutLocations)
+return(returnData)
+}
+```
+
+```{r}
+#Call triple
+callTripleForest <- function(dataframe, locationCount){
+  
+loadPackages()
+splitDataList = splitData(dataframe)
+
+dataWithLocations = splitDataList[[1]]
+dataWithoutLocations = splitDataList[[2]]
+
+dataWithLocations = cleanData(dataWithLocations)
+
+forestList = callAllForests(dataWithLocations,locationCount)
+dataWithLocationsCalculated = forestList[[1]]
+
+returnData = mergeData(dataWithLocationsCalculated,dataWithoutLocations)
+return(returnData)
+}
+```
+
+```{r}
+#Call all 
+callSingleandTriple <- function(dataframe, locationCount){
+loadPackages()
+splitDataList = splitData(dataframe)
+
+dataWithLocations = splitDataList[[1]]
+dataWithoutLocations = splitDataList[[2]]
+
+dataWithLocations = cleanData(dataWithLocations)
+
+forestList = callAllForests(dataWithLocations,locationCount)
+dataWithLocationsCalculated = forestList[[1]]
+
+forestList = callForest(dataWithLocationsCalculated,locationCount)
+dataWithLocationsCalculated = forestList[[1]]
+
+returnData = mergeData(dataWithLocationsCalculated,dataWithoutLocations)
+return(returnData)
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+load(file = "cleanDallas.RData")
+dallasData
+```
+
+```{r}
+returnList = callAllForests(dataframe = dallasData)
+returnList[[1]] # full data frame
+returnList[[2]] # list of top 20 areas
+returnList[[3]][[1]] # models
+returnList[[4]] # estimated misclass rate
+returnList[[5]] # list of sections
+
+returnSingle = callForest(dataframe = dallasData, numberOfLocations = 20)
+returnSingle[[1]] # full data frame
+returnSingle[[2]] # list of top 20 areas
+returnSingle[[3]] # models
+returnSingle[[4]] # estimated misclass rate
+returnSingle[[5]] # list of sections
+```
+
+
+```{r}
+#this requires the dataframe to have the area being predicted called 'location'
+callAllForests <- function(dataframe, numberOfLocations){
+
+    #split by periods
+    dataframe$period1 <- ifelse(dataframe$Year <= 1940, 1,0)
+    dataframe$period2 <- ifelse(dataframe$Year >= 1940 & dataframe$Year <= 1970, 1,0)
+    dataframe$period3 <- ifelse(dataframe$Year >= 1970, 1,0)
+  
+    dataframe$calculatedColumnPeriod1 <- 'a'
+    dataframe$calculatedColumnPeriod2 <- 'b'
+    dataframe$calculatedColumnPeriod3 <- 'c'
+    
+    dataframe$calculatedColumnPeriod1 <- as.character(dataframe$calculatedColumnPeriod1)
+    dataframe$calculatedColumnPeriod2 <- as.character(dataframe$calculatedColumnPeriod2)
+    dataframe$calculatedColumnPeriod3 <- as.character(dataframe$calculatedColumnPeriod3)   
+    
+    dataFrameList = list()
+    filteredData1 = dataframe %>% filter(period1 == 1)
+    filteredData2 = dataframe %>% filter(period2 == 1)
+    filteredData3 = dataframe %>% filter(period3 == 1)
+   
+    dataFrameList[[1]] = filteredData1
+    dataFrameList[[2]] = filteredData2
+    dataFrameList[[3]] = filteredData3
+    
+    topLocationsList = list()
+    modelList = list()
+    misclassList = list()
+    predictedList = list()
+    
+    for(i in c(1:3)){  
+    #get top locations from period i
+    
+    filteredData = dataFrameList[[i]]
+    
+    topData <- filteredData %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  topData <- topData[1:20,]$location
+  topLocationsList[[i]] = topData
+    
+    #filter for locations in the top 20
+    filteredData = filteredData %>% filter(location %in% topLocationsList[[i]])
+
+    filteredData$location = as.character(filteredData$location)
+    filteredData$location = as.factor(filteredData$location)
+
+    #call classifier
+    
+    #take a random sample to test the model
+    modelData <- filteredData
+    set.seed(343)
+    shuf <- sample(nrow(modelData))
+    modelData <- modelData[shuf,]
+    train <- sample(nrow(modelData)*.8)
+    modelTrain <- modelData[train,]
+    modelTest <- modelData[-train,]
+
+  #build the model to test with a misclass rate
+  bag <- randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelTrain, ntree = 1000, importance = TRUE)
+  yhat.rf <- predict(bag, newdata = modelTest)
+  misclassRate <- mean(yhat.rf != modelTest$location)
+  misclassList[[i]] = misclassRate
+
+  #Train the full model
+  modelList[[i]] = randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+    
+  #Filter the data that needs to have a predicion
+  toPredict = dataFrameList[[i]] %>% filter(!(location %in% topLocationsList[[i]]))
+  
+  #Predict using the full model and add the new column
+  yhat.rf <- predict(modelList[[i]], newdata = toPredict)
+  predicted <- cbind(toPredict,yhat.rf)
+  
+  
+  if(i==1){
+    predicted$calculatedColumnPeriod1 = predicted$yhat.rf
+    predicted = predicted %>% select(-yhat.rf)
+    predicted1 = predicted
+    predictedList[[i]] = predicted
+    
+    dataInTopArea = dataFrameList[[i]] %>% filter(location %in% topLocationsList[[i]])
+    dataInTopArea$calculatedColumnPeriod1 = "Given"  
+    
+    firstPeriod = rbind(predicted, dataInTopArea)
+    fullDataSet = firstPeriod
+    
+    
+  }else if(i==2){
+    predicted$calculatedColumnPeriod2 = predicted$yhat.rf
+    predicted = predicted %>% select(-yhat.rf)
+    predicted1 = predicted
+    predictedList[[i]] = predicted
+    
+    dataInTopArea = dataFrameList[[i]] %>% filter(location %in% topLocationsList[[i]])
+    dataInTopArea$calculatedColumnPeriod2 = "Given"  
+    
+    secondPeriod = rbind(predicted, dataInTopArea)
+    fullDataSet = rbind(fullDataSet,secondPeriod)
+    
+  }else if(i==3){
+    predicted$calculatedColumnPeriod3 = predicted$yhat.rf
+    predicted = predicted %>% select(-yhat.rf)
+    predicted1 = predicted
+    predictedList[[i]] = predicted
+    
+    dataInTopArea = dataFrameList[[i]] %>% filter(location %in% topLocationsList[[i]])
+    dataInTopArea$calculatedColumnPeriod3 = "Given"  
+    
+    thirdPeriod = rbind(predicted, dataInTopArea)
+    fullDataSet = rbind(fullDataSet, thirdPeriod)    
+    
+  }else{
+    
+  }
+  
+    }  
+  
+fullDataSet = fullDataSet %>% arrange(index)
+
+#correct duplicate rows from the <= >= on the border years
+fullDataSet = correctDups(fullDataSet)
+
+  returnList = list()
+  returnList[[1]] = fullDataSet
+  returnList[[2]] = topLocationsList
+  returnList[[3]] = modelList
+  returnList[[4]] = misclassList
+  returnList[[5]] = predictedList
+    
+  return(returnList)
+}
+```
+
+
+```{r}
+#If no duplicates exist this crashes
+correctDups <- function(dataframe){
+  
+n_occur <- data.frame(table(dataframe$index))
+
+repeats = dataframe[dataframe$index %in% n_occur$Var1[n_occur$Freq > 1],]
+
+shift <- function(x,n){
+  c(x[-(seq(n))], rep(NA,n))
+}
+
+firstJoin = repeats %>% filter(period1 == 1 & period2 == 1)
+
+firstJoin$calculatedColumnPeriod2 = shift(firstJoin$calculatedColumnPeriod2, 1)
+
+firstJoin = firstJoin %>% filter(row_number() %% 2 == 1)
+
+secondJoin = repeats %>% filter(period2 == 1 & period3 == 1)
+
+secondJoin$calculatedColumnPeriod3 = shift(secondJoin$calculatedColumnPeriod3, 1)
+secondJoin = secondJoin %>% filter(row_number() %% 2 == 1)
+
+correctDups = rbind(firstJoin, secondJoin)
+
+toFilter = correctDups$index
+
+dataframe = dataframe %>% filter(!(index %in% toFilter))
+
+dataframe = rbind(dataframe, correctDups)
+
+dataframe = dataframe %>% arrange(index)
+
+return(dataframe)
+}
+```
+
+
+
+
+```{r}
+callForest <- function(dataframe, numberOfLocations){
+  
+    dataframe$index <- c(1:nrow(dataframe)) #create an index to restore later
+
+    
+    filteredData = dataframe
+    
+    topNLocations <- filteredData %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  topNLocations <- topNLocations[1:numberOfLocations,]$location
+
+    filteredData = filteredData %>% filter(location %in% topNLocations) #filter for locations in the top N
+
+    filteredData$location = as.character(filteredData$location) #Swap from character to factor to get the correct number of 
+    filteredData$location = as.factor(filteredData$location)    #factors, can cause a model crash.
+    
+    
+  
+  ##Call the Classifier##  
+    
+    modelData <- filteredData    #take a random sample to test the model
+    set.seed(343)
+    shuf <- sample(nrow(modelData))
+    modelData <- modelData[shuf,]
+    train <- sample(nrow(modelData)*.8)
+    modelTrain <- modelData[train,]
+    modelTest <- modelData[-train,]
+
+  
+  bag <- randomForest(location ~ latitude + longitude + Year + Total.rooms.estimation , data = modelTrain, ntree = 1000, importance = TRUE)           #build the model to test with a misclass rate
+  yhat.rf <- predict(bag, newdata = modelTest)
+  misclassRate <- mean(yhat.rf != modelTest$location)
+
+  #Train the full model
+  model = randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+    
+  
+  toPredict = dataframe %>% filter(!(location %in% topNLocations))  #Filter the data that needs to be predicted 
+  
+  
+  yhat.rf <- predict(model, newdata = toPredict)    #Predict using the full model and add the new column
+  predicted <- cbind(toPredict,yhat.rf)
+  
+    predicted$calculatedColumn = predicted$yhat.rf
+    predicted = predicted %>% select(-yhat.rf)
+   
+    dataInTopNLocations = dataframe %>% filter(location %in% topNLocations)
+    dataInTopNLocations$calculatedColumn = "Given"  
+    
+    fullDataSet = rbind(predicted, dataInTopNLocations)
+    
+    fullDataSet = fullDataSet %>% arrange(index)
+  
+    
+  returnList = list()
+  returnList[[1]] = fullDataSet
+  returnList[[2]] = topNLocations
+  returnList[[3]] = model
+  returnList[[4]] = misclassRate
+  returnList[[5]] = predicted
+  
+  return(returnList)
+    
+}
+```
+
+
+
+
+
+```{r}
+
+
+#returns a column with the captilaized price 
+#Requires 
+
+
+#column name for housing type to be 'Type'
+#location to be predicted on to be'location'
+#Price type to be 'Price.type'
+#bedrooms to be 'Bedrooms'
+#total rooms to be 'Total.rooms'
+#pay frequency to be 'Frequency'
+#'Sale.price'
+#'Rent.price'
+
+cleanData <- function(dataframe){
+
+
+#Capitalize the price into one column
+dataframe <- capitalizeRent(dataframe)
+dataframe$capitalizedPrice[is.na(dataframe$capitalizedPrice)] = median(dataframe$capitalizedPrice[!is.na(dataframe$capitalizedPrice)])
+  
+
+#clean some columns (ensure factors and lowercase inputs)
+dataframe$location <- as.factor(dataframe$location)
+
+dataframe$Price.type <- tolower(dataframe$Price.type)
+dataframe$Price.type <- gsub('income', 'rent', dataframe$Price.type)
+dataframe$Price.type <- as.factor(dataframe$Price.type)
+
+dataframe$Type <- tolower(dataframe$Type)
+dataframe$Type <- as.factor(dataframe$Type)
+
+
+  
+
+#calculate the number of rooms via regression 
+data = dataframe %>% filter(Bedrooms != "" & Total.rooms != "") #obs with both for model
+
+lmmodel <- lm(Total.rooms ~ Bedrooms, data)
+
+coeff = lmmodel$coefficients
+names(coeff) <- NULL
+multiple = coeff[2]
+
+#add the estimated rows
+estimation = data.frame(dataframe$Total.rooms, dataframe$Bedrooms, Total.rooms.estimation = NA) %>% mutate(Total.rooms.estimation = ifelse(!is.na(dataframe.Total.rooms), dataframe.Total.rooms,round(dataframe.Bedrooms*multiple))) 
+
+#fill the rest in with the median
+medianOfTotal = median(estimation$Total.rooms.estimation[which(!is.na(estimation$Total.rooms.estimation))])
+
+estimation = estimation %>% mutate(Total.rooms.estimation = ifelse(is.na(Total.rooms.estimation), medianOfTotal,as.double(Total.rooms.estimation))) 
+
+dataframe = cbind(dataframe, "Total.rooms.estimation"= estimation[,3])
+
+
+return(dataframe)
+
+}
+```
+
+
+
+
+
+```{r}
+
+capitalizeRent <- function(dataFrame){
+  
+  dataFrame$Frequency <- as.character(dataFrame$Frequency)
+  dataFrame$numericFrequency <- ifelse(grepl(pattern = "m",dataFrame$Frequency), 12, 
+                            ifelse(grepl(pattern = "year",dataFrame$Frequency), 1,
+                            ifelse(grepl(pattern = "ann",dataFrame$Frequency), 1,
+                            ifelse(grepl(pattern = "week",dataFrame$Frequency),52, 12))))
+  
+  load(file = "Capitalization.RData")
+  dataFrame <- dataFrame %>% left_join(capitalizationRate, by = c("Year" = "year"))
+  
+  dataFrame$Sale.price <- as.numeric(gsub(",","",dataFrame$Sale.price))
+  dataFrame$Rent.price <- as.numeric(gsub(",","",dataFrame$Rent.price))
+  
+  dataFrame$capitalizedPrice <- ifelse( (!is.na(dataFrame$Sale.price) & (dataFrame$Sale.price != "") ), 
+                                        dataFrame$Sale.price, 
+                                        dataFrame$numericFrequency*dataFrame$cap*dataFrame$Rent.price)
+  dataFrame$capitalizedPrice <- round(dataFrame$capitalizedPrice,2)
+  return(dataFrame)
+}
+```
+
+
+
+```{r}
+#adda an index column and
+#splits dataframe in two based on if we have location data or not
+
+splitData <- function(dataframe){
+  
+  #create an index to restore later
+  dataframe$index = c(1:nrow(dataframe))  
+    
+  #first return is with location, second return is without
+  data = list()  
+  data[[1]] = dataframe %>% filter(!is.na(latitude))%>% filter(!is.na(longitude))  
+  data[[2]] = dataframe %>% filter(is.na(latitude))%>% filter(is.na(longitude))
+  return(data)
+}
+```
+
+
+```{r}
+#arrange by the index of the dataframe and return
+#does not remove extra columns, since datasets have different extra columns and can be removed in any other software easily
+mergeData <- function(dataframe1, dataframe2){
+  
+  #create an index to restore later
+
+  data = plyr::rbind.fill(dataframe1, dataframe2)
+  data %>% arrange(index)  
+  
+  return(data)
+}
+```
+
+
+```{r}
+
+#calls the required packages used in this procedure
+loadPackages <- function(){
+
+# Package names
+packages <- c("tidyverse","randomForest")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+}
+```
+
+
+```{r}
+   
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+ggmap(map) + geom_point(data = modelData, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.position = "none")
+```
+

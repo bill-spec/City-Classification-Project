@@ -1,0 +1,93 @@
+---
+title: "Animations"
+author: "Bill Lang"
+date: "3/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gganimate)
+library(ggmap)
+library(tidygeocoder)
+library(png)
+library(gifski)
+library(magick)
+
+```
+
+```{r}
+k <- "AIzaSyDNMoGGfgl9f5KtGCnp9BegNb7ZDqPu7gg"
+register_google(key = k)
+```
+
+
+```{r}
+load(file = "cleanDallas.RData")
+dallasData
+```
+
+```{r}
+data = getTop(dallasData)
+
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+
+anim = ggmap(map) + geom_point(data = data, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.title = element_blank())+
+  labs(title = "Year {frame_time}")+
+  transition_time(Year)+
+  enter_fade()+
+  exit_fade()
+```
+
+
+```{r}
+animate(anim, renderer = magick_renderer(), duration = 20)
+```
+
+
+```{r}
+animate(anim, renderer = magick_renderer(), duration = 50, height = 800, width = 800, fps = 10)
+
+animation01 = animate(anim, renderer = magick_renderer(), duration = 20)
+anim_save(file = "C:/Users/the36/Desktop/Animations/animation01.gif",  animation01)
+```
+
+
+
+```{r}
+getTop <- function(dataframe, countOfLocations = 20){
+
+  topData <- dataframe %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
+  topData <- topData[1:countOfLocations,]$location
+    
+    #filter for locations in the top 20
+    dataframe = dataframe %>% filter(location %in% topData)
+    return(dataframe)
+}
+```
+
+
+
+```{r}
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+
+
+callRender <- function(dataframe, minYear = 0, maxYear = 2100, countOfLocations = 20){
+    
+  dataFrameTop = getTop(dataframe,countOfLocations)
+ anim = ggmap(map) + geom_point(data = dataFrameTop, mapping = aes(x = longitude, y = latitude, color = factor(location)), size = 0.1) + theme(legend.title = element_blank())+
+  labs(title = "Year {frame_time}")+
+  transition_time(Year)+
+  enter_fade()+
+  exit_fade() 
+
+  return(anim)
+}
+
+anim = callRender(dallasData)
+
+animate(anim, renderer = magick_renderer(), duration = 50, fps = 10)
+
+```
+

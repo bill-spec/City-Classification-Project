@@ -127,8 +127,6 @@ splitByDecadeImages(NYData,12, 'New York')
 ```
 
 ```{r}
-
-
 intersectBetweenHalf <- function(dataframe, locationCount){
   
   df <- dataframe %>% group_by(location) %>% summarise(count = n()) %>% arrange(desc(count)) %>% filter(location != "")
@@ -149,10 +147,12 @@ intersectBetweenHalf <- function(dataframe, locationCount){
   a = intersect(df49,df50)
   length(a)
   #a
+  
+  
 
 }
  
-intersectBetweenHalf(bostonData,50)
+intersectBetweenHalf(bostonData,20)
 intersectBetweenHalf(dallasData,16)
 intersectBetweenHalf(cleanDC,20)
 intersectBetweenHalf(cleanDetroit,20)
