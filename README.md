@@ -11,9 +11,9 @@ The 'Completed Functions' folder is where the completed, one click, functions fo
 
 This file contains the functions that classify the locations using a random forest. The requirements of the dataframe to be passed through are given in the file.
 
-## AnimationFunction.R
+### AnimationFunction.R
 
-This file is for animating maps using the gganimate package. They can take a while to load. They also do not do much gganimate is already very intuitive.
+This file is for animating maps using the gganimate package. They can take a while to load. They also do not do much gganimate is already very intuitive. This also uses my own google API key... it is from a spam email so no worries (I think).
 
 ### Driver File.Rmd
 
