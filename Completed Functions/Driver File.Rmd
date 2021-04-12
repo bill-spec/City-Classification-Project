@@ -1,0 +1,35 @@
+---
+title: "Driver File"
+author: "Bill Lang"
+date: "4/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+
+```{r}
+library(tidyverse)
+load(file = "dallasGeocodedNotFound.RData")
+geocodedDallasNotFound = geocodedDallasNotFound %>% select(-c(X,X.1))
+geocodedDallasNotFound
+
+
+load(file = "dallasGeocoded2.RData")
+dallasGeocoded
+
+data = plyr::rbind.fill(dallasGeocoded,geocodedDallasNotFound)
+data
+```
+
+
+
+```{r}
+classified = callSingleForest(data, locationCount = 20)
+classified
+```
+
