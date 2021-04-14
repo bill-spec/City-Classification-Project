@@ -7,10 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 ```
 
-
+This first portion just brings together all of our data, it was preiovusly split by geocoded and not geocoded but this functions handle and encourage that situation.
 
 ```{r}
 library(tidyverse)
@@ -27,9 +26,53 @@ data
 ```
 
 
+Load the packages
+
+```{r}
+loadPackages()
+```
+
+```{r}
+
+```
+
+
 
 ```{r}
 classified = callSingleForest(data, locationCount = 20)
 classified
 ```
+
+
+
+
+
+Animations. 
+
+Install and/or load the packages.
+
+```{r}
+loadPackagesAnimations()
+```
+
+Call the map.(e.g. location = "city")
+
+```{r}
+map <- get_map(location = 'Dallas', zoom = 10, maptype = "terrain-background", source = 'google', color = 'color')
+```
+
+Call the render on the data you are working with. Can make use of all the parameters created in `AnimationFunctions.R` 
+
+```{r}
+anim = callRender(dallasData, minYear = 0, maxYear = 2100, )
+```
+
+Call animate, renderer needs to be magick_renderer right now since there are bugs with the default package (as of March 2021). 
+This can take a long time. See all parameters by running `?animate`.
+
+```{r}
+animate(anim, renderer = magick_renderer(), duration = 50, fps = 10)
+```
+
+
 

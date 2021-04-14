@@ -6,6 +6,7 @@
 
 #location to be predicted on needs to be'location'
 #column name for housing type needs to be 'Type'
+#column name for  year needs to be 'Year'
 #column name for the price type needs to be 'Price.type'
 #column name for the number of bedrooms needs to be 'Bedrooms'
 #column name for total rooms needs to be 'Total.rooms'
@@ -88,13 +89,32 @@ callSingleandTriple <- function(dataframe, locationCount){
 }
 
 
+callNPeriodForest <- function(dataframe, locationCount = 20, splitBy){
+  loadPackages()
+  splitDataList = splitData(dataframe)
+  
+  dataWithLocations = splitDataList[[1]]
+  dataWithoutLocations = splitDataList[[2]]
+  
+  dataWithLocations = cleanData(dataWithLocations)
+  
+  forestSplitData = forestSplit(dataframe, locationCount, splitBy) 
+  
+  dataWithLocationsCalculated = forestSplitData
+  
+  returnData = mergeData(dataWithLocationsCalculated,dataWithoutLocations)
+  return(returnData)
+  
+}
+
+
 
 
 
 
 
 ###########################################################################################
-# Functions for the above methods #
+# Helper Functions for the above functions #
 ###########################################################################################
 
 
@@ -498,5 +518,53 @@ correctDups <- function(dataframe){
 
 
 
+#Return a dataset with n + 1 calculated columns based on n based on splitBy and m locations based on locationCount
+forestSplit <- function(dataframe, locationCount, splitBy){
+  
+  tempFrame = dataframe #temp frame so that we can manipulate willy nilly
+  
+  yearMin = max(dataframe$Year)
+  yearMax = min(dataframe$Year)
+  
+  periodLength = yearMax - yearMin
+  periodIncremenet = ceiling(periodLength/splitBy)
+  
+  yearSplitVector = c()
+  cur = yearMin
+  
+  for(i in c(1:(splitBy))){
+    
+    cur = cur + yearIncrement 
+    
+    yearSplitVector[i] = cur
+    
+    
+  }
+  
+  
 
+  for(j in c(1:(splitBy))){
+    
+    dataInSet = tempData %>% filter(Year <= yearSplitVector[j])           #filter both sides
+    dataOutOfSet = tempData %>% filter(Year > yearSplitVector[j]) 
+    
+    forestCall = callForest(dataInSet, locationCount)     #call a forest and return based on the data in the set 
+    newData = forestCall[1]
+    
+    
+    columnToAdd = newData$calculatedColumn          #add the column to the data and rename it periodBelow i (the year curoff)
+    dataOutOfSet[ , ncol(dataOutOfSet) + 1] <- columnToAdd                  
+    colnames(dataOutOfSet)[ncol(dataOutOfSet)] <- paste0("periodBelow", j)    
+    
+    
+    tempData = plyr::rbind.fill(dataOutOfSet,dataInSet)           #add the temp data
+    
+    
+  }
+  
+  
+  return(tempData)
+  
 
+  
+}
