@@ -13,7 +13,7 @@ This file contains the functions that classify the locations using a random fore
 
 ### AnimationFunction.R
 
-This file is for animating maps using the gganimate package. They can take a while to load. They also do not do much gganimate is already very intuitive. This also uses my own google API key... it is from a spam email so no worries (I think).
+This file is for animating maps using the [gganimate package](https://gganimate.com/articles/gganimate.html).  They can take a while to load. They also do not do much other than streamline some steps, gganimate is quite intuitive. This also uses my own google API key... it is from a spam email so no worries (I think).
 
 ### Driver File.Rmd
 
@@ -24,7 +24,7 @@ This file tests the functions using the dallas dataset that has already been geo
 
 ## Everything Else
 
-Each city is self contained in its own folder and follows the same workflow (geocode, clean, train forest, test forest, return data and wrtie to desktop)
+Each city is self contained in its own folder and follows the same workflow (geocode, clean, train forest, test forest, return data, and wrtie to desktop)
 
 Each one of the above steps is contained in its own .Rmd file and the names are the same as the names above.
 
