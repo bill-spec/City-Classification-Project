@@ -24,7 +24,7 @@ This file tests the functions using the dallas dataset that has already been geo
 
 ## Everything Else
 
-Each city is self contained in its own folder and follows the same workflow (geocode, clean, train forest, test forest, return data and wrtie to desktop)
+Each city is self contained in its own folder and follows the same workflow (geocode, clean, train forest, test forest, return data, and wrtie to desktop)
 
 Each one of the above steps is contained in its own .Rmd file and the names are the same as the names above.
 
