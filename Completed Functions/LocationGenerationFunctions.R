@@ -98,7 +98,7 @@ callNPeriodForest <- function(dataframe, locationCount = 20, splitBy){
   
   dataWithLocations = cleanData(dataWithLocations)
   
-  forestSplitData = forestSplit(dataframe, locationCount, splitBy) 
+  forestSplitData = forestSplit(dataWithLocations, locationCount, splitBy) 
   
   dataWithLocationsCalculated = forestSplitData
   
@@ -293,12 +293,12 @@ callForest <- function(dataframe, numberOfLocations = 20){
   modelTest <- modelData[-train,]
   
   
-  bag <- randomForest(location ~ latitude + longitude + Year + Total.rooms.estimation , data = modelTrain, ntree = 1000, importance = TRUE)           #build the model to test with a misclass rate
+  bag <- randomForest(location ~ latitude + longitude + Year + Total.rooms.estimation + capitalizedPrice, data = modelTrain, ntree = 1000, importance = TRUE)           #build the model to test with a misclass rate
   yhat.rf <- predict(bag, newdata = modelTest)
   misclassRate <- mean(yhat.rf != modelTest$location)
   
   #Train the full model
-  model = randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
+  model = randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation + capitalizedPrice, data = modelData, ntree = 1000, mtry = 2, importance = TRUE)
   
   
   toPredict = dataframe %>% filter(!(location %in% topNLocations))  #Filter the data that needs to be predicted 
@@ -311,7 +311,8 @@ callForest <- function(dataframe, numberOfLocations = 20){
   predicted = predicted %>% select(-yhat.rf)
   
   dataInTopNLocations = dataframe %>% filter(location %in% topNLocations)
-  dataInTopNLocations$calculatedColumn = "Given"  
+  #dataInTopNLocations$calculatedColumn = "Given"  
+  dataInTopNLocations$calculatedColumn = dataInTopNLocations$location
   
   fullDataSet = rbind(predicted, dataInTopNLocations)
   
@@ -400,7 +401,7 @@ callAllForests <- function(dataframe, numberOfLocations = 20){
     modelTest <- modelData[-train,]
     
     #build the model to test with a misclass rate
-    bag <- randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation , data = modelTrain, ntree = 1000, importance = TRUE)
+    bag <- randomForest(location ~ latitude + longitude + Year +Total.rooms.estimation, data = modelTrain, ntree = 1000, importance = TRUE)
     yhat.rf <- predict(bag, newdata = modelTest)
     misclassRate <- mean(yhat.rf != modelTest$location)
     misclassList[[i]] = misclassRate
@@ -521,7 +522,7 @@ correctDups <- function(dataframe){
 #Return a dataset with n + 1 calculated columns based on n based on splitBy and m locations based on locationCount
 forestSplit <- function(dataframe, locationCount, splitBy){
   
-  tempFrame = dataframe #temp frame so that we can manipulate willy nilly
+  tempData = dataframe #temp frame so that we can manipulate willy nilly
   
   yearMin = max(dataframe$Year)
   yearMax = min(dataframe$Year)

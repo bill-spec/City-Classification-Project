@@ -33,13 +33,24 @@ loadPackages()
 ```
 
 ```{r}
-
+classified = callSingleForest(data, locationCount = 20)
+classified
 ```
 
 
+```{r}
+classified = callTripleForest(data, locationCount = 20)
+classified
+```
 
 ```{r}
-classified = callSingleForest(data, locationCount = 20)
+classified = callSingleandTriple(data, locationCount = 20)
+classified
+```
+
+```{r}
+
+classified = callNPeriodForest(data, locationCount = 20, splitBy = 5)
 classified
 ```
 
