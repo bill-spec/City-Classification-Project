@@ -13,7 +13,7 @@ This file contains the functions that classify the locations using a random fore
 
 ### AnimationFunction.R
 
-This file is for animating maps using the gganimate package. They can take a while to load. They also do not do much gganimate is already very intuitive. This also uses my own google API key... it is from a spam email so no worries (I think).
+This file is for animating maps using the [gganimate package](https://gganimate.com/articles/gganimate.html).  They can take a while to load. They also do not do much gganimate is already very intuitive. This also uses my own google API key... it is from a spam email so no worries (I think).
 
 ### Driver File.Rmd
 
